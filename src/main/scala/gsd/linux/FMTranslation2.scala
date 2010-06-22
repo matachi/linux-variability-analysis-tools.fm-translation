@@ -22,42 +22,93 @@ package gsd.linux
 
 object FMTranslation2 extends BooleanTranslation {
 
-  type ParentIdMap = Map[String, Option[String]]
-
   /**
-   * Returns a list of the ancestors of child beginning with its immediate parent.
+   * @param pm A map from configs to their parent (could be a config, menu or choice).
+   * @return a list of the ancestors of child beginning with its immediate parent.
    */
-  def mkAncestorList(parentMap: ParentIdMap)(child: String): List[String] =
-    parentMap(child) match {
-      case Some(parent) => parent :: mkAncestorList (parentMap)(parent)
+  def mkAncestorList(pm: Map[CSymbol, CSymbol])(child: CSymbol): List[CSymbol] =
+    pm.get(child) match {
+      case Some(parent) => parent :: mkAncestorList (pm)(parent)
       case None => Nil
     }
 
-  def mkFeatureModel(sat: SATBuilder, parentMap: ParentIdMap) = {
+  /**
+   * The algorithm uses two maps for constructing the hierarchy:
+   *     1. Hierarchy Map - A map of a feature to its immediate parent.
+   *     2. Config Map - A map of a feature to its closest ancestor config.
+   *
+   * The SAT solver only contains configs since only configs can participate in
+   * constraints. 
+   */
+  def mkFeatureModel(sat: SATBuilder, k: ConcreteKConfig) = {
 
-    //Remove features at the root and dead features
-    val process = parentMap.toList.remove {
-      case (child, None) => true
-      case (child,_) => !sat.isSatisfiable(PosLit(child))
-    }
+    def mkProperParents: Map[CSymbol, CSymbol] = {
 
-    //Features that violate the hierarchy
-    val violating = process.filter {
-      case (child, Some(parent)) => !sat.isSatisfiable(PosLit(child), PosLit(parent))
-      case _ => error("Should be unreachable.")
-    }
-
-    val properParents = violating.map { case (child,_) =>
-      //Ignore first parent since we know it is not satisfiable.
-      //We previously filtered out rooted features so we have > 0 ancestors.
-      val ancestors = mkAncestorList(parentMap)(child).tail
-      val pParent = ancestors.find { p =>
-        sat.isSatisfiable(PosLit(child), PosLit(p))
+      //A map from all features to their closest ancestor that's a Config
+      val configMap = Hierarchy.mkParentMap(k)
+      
+      //Remove menus, choices and dead features from the parentMap
+      val process = configMap.toList.remove {
+        case (_:CMenu,_) | (_:CChoice,_) => true
+        case (child,_) => !sat.isSatisfiable(PosLit(child.id))
       }
-      child -> pParent
+      
+      //Filter features that violate the hierarchy -- they do not imply their
+      //parents
+      val violating = process.filter {
+        case (child, par) => !sat.isSatisfiable(PosLit(child.id), PosLit(par.id))
+      }
+  
+      val properParents = violating.map { case (child,_) =>
+
+        //Ignore first parent since we know it is not satisfiable.
+        //We previously filtered out rooted features so we have > 0 ancestors.
+        val ancestors = mkAncestorList(configMap)(child).tail
+
+        //FIXME not nesting under the closest menu or choice
+        val pParent: Option[CSymbol] = ancestors.find {
+          case p: CConfig => sat.isSatisfiable(PosLit(child.id), PosLit(p.id))
+          case _ => false
+        }
+
+        //Note: a proper parent may not be found
+        child -> pParent
+      }
+
+      properParents.foreach { println }
+
+      val (rooted, properParentsPrime) = properParents.partition {
+        case (_,None) => true
+        case _ => false
+      } match { 
+        case (r,pp) =>
+          r.map { case (k,_) => k } -> pp.map { case (k,v) => k -> v.get }
+      }
+
+
+      //Return the new hierarchy.
+      //Features that don't have a proper parent belong at the root (they don't
+      //exist in the map).
+      Map() ++ configMap ++ properParentsPrime -- rooted
     }
 
-    properParents.foreach { println }
+    def mkHierarchy(parentMap: Map[CSymbol, CSymbol]) = {
+
+      //Roots are features that are not present in the parentMap
+      val roots = k.features.filter { parentMap.contains }
+
+      def mkFeature(c: CSymbol): List[Feature] = c match {
+        case _: CConfig => List(OFeature(c.id, Nil, c.children.flatMap { mkFeature }))
+        case _: CMenu => List(MFeature(c.id, Nil, c.children.flatMap { mkFeature }))
+        case _: CChoice => c.children.flatMap { mkFeature }
+      }
+
+      def mkGroup(c: CChoice): XorGroup = XorGroup(c.children.map { _.id })
+      
+      FeatureModel(roots.flatMap { mkFeature }, k.choices.map { mkGroup })
+    }
+
+    mkHierarchy(mkProperParents)
   }
 
 

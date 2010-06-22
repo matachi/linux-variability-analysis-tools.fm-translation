@@ -38,13 +38,13 @@ object FMTranslationMain {
     val CNFData(cnf, ids, gens) = CNFParser.parseCNFFile(args(1))
     val idMap = IdMapBuilder.mkIdMap(ids ++ gens)
     val ck = KConfigParser.parseKConfigFile(args(0))
-    val parentMap = Hierarchy.toOptionIdMap(Hierarchy.mkParentMap(ck))
+    val parentMap = Hierarchy.mkParentMap(ck)
 
     println("Loading SAT Solver...")
     val sat = new SATBuilder(idMap)
     sat.addCNF(cnf)
 
-    FMTranslation2.mkFeatureModel(sat, parentMap)
+    FMTranslation2.mkFeatureModel(sat, ck)
   }
   
 }
