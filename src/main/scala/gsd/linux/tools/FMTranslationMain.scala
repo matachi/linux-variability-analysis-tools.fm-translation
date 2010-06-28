@@ -44,7 +44,8 @@ object FMTranslationMain {
     val sat = new SATBuilder(idMap)
     sat.addCNF(cnf)
 
-    FMTranslation2.mkFeatureModel(sat, ck)
+    val pps = FMTranslation.mkProperParents(sat, ck)
+    FMTranslation.mkFeatureModel(pps, ck)
   }
   
 }
