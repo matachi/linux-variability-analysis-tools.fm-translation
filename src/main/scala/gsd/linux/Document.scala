@@ -26,7 +26,7 @@ import java.io.PrintStream
  */
 object Document {
 
-  implicit def string(s: String) = StringText(s)
+  implicit def string(s: String): Text = StringText(s)
   implicit def concat(lst: Iterable[Text]): Text = iterToText(lst)(_ +: _)
   
   def iterToText(lst: Iterable[Text])(op: (Text, Text) => Text): Text =
@@ -38,7 +38,10 @@ object Document {
 
     def ::(head: Text): Text = ConsText(head, SpaceText(this))
     def +:(head: Text): Text = ConsText(head, this)
-    def :/:(head: Text) = head :: NewLine +: this
+    def :/:(head: Text) = if (head == Empty) this
+                          else head :: NewLine +: this
+
+    def print() = format(System.out)
 
     def format(w: PrintStream) = {
 
@@ -75,6 +78,7 @@ object Document {
       }
 
       fmt(0, this :: Nil)
+      w.println
     }
 
   }
@@ -84,52 +88,7 @@ object Document {
   case class SpaceText(t: Text) extends Text
   case class ConsText(head: Text, tail: Text) extends Text
   case object NewLine extends Text
-  case object Empty extends Text { //not really necessary
-    override def ::(head: Text) = head
-    override def :/:(head: Text) = head :: NewLine
-  }
-
+  case object Empty extends Text
 }
 
-trait FMDocument {
-
-  import Document._
-
-  //TODO groups
-  def toText(fm: FeatureModel): Text =
-    BlockText("", "", fm.features map toText)
-
-  def toText(f: Feature): Text = f match {
-    case OptFeature(name,t,ctcs,cs) =>
-      name :: "?" :: ":" :: toText(t) :: BlockText("{", "}", cs map toText) :/:
-        BlockText("[", "]", iterToText(ctcs map toText)(_ :/: _)) :: NewLine
-    case MandFeature(name,t,ctcs,cs) =>
-      name :: ":" :: toText(t) :: BlockText("{", "}", cs map toText) :: NewLine
-  }
-
-  def toText(t: FeatType): Text = t match {
-    case BoolFeat => "boolean"
-    case TriFeat => "tristate"
-    case StringFeat => "string"
-    case IntFeat => "int"
-  }
-
-  def toText(e: TExpr): Text = e match {
-    case TYes => "Y"
-    case TMod => "M"
-    case TNo => "N"
-    case TAnd(x,y) => "(" +: toText(x) +: ")" :: "&" :: "(" +: toText(y) +: ")"
-    case TOr(x,y) => "(" +: toText(x) +: ")" :: "|" :: "(" +: toText(y) +: ")"
-    case TEq(x,y) => "(" +: toText(x) +: ")" :: "=" :: "(" +: toText(y) +: ")"
-    case TGte(x,y) => "(" +: toText(x) +: ")" :: ">=" :: "(" +: toText(y) +: ")"
-    case TLte(x,y) => "(" +: toText(x) +: ")" :: "<=" :: "(" +: toText(y) +: ")"
-
-    case TNot(x) => "!" +: toText(x)
-    case TBool(x) => "Bool(" +: toText(x) +: string(")")
-    case TId(x) => string(x)
-
-    case _ => StringText(e.toString)
-  }
-
-}
 
