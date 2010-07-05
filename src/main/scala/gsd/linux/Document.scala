@@ -26,7 +26,7 @@ import java.io.PrintStream
  */
 object Document {
 
-  implicit def string(s: String): Text = StringText(s)
+  implicit def string(s: String): Text = StringT(s)
   implicit def concat(lst: Iterable[Text]): Text = iterToText(lst)(_ +: _)
   
   def iterToText(lst: Iterable[Text])(op: (Text, Text) => Text): Text =
@@ -36,10 +36,10 @@ object Document {
 
   abstract class Text {
 
-    def ::(head: Text): Text = ConsText(head, SpaceText(this))
-    def +:(head: Text): Text = ConsText(head, this)
+    def ::(head: Text): Text = ConsT(head, SpaceT(this))
+    def +:(head: Text): Text = ConsT(head, this)
     def :/:(head: Text) = if (head == Empty) this
-                          else head :: NewLine +: this
+                          else head :: NL +: this
 
     def print() = format(System.out)
 
@@ -51,25 +51,26 @@ object Document {
       def fmt(level: Int, state: List[Text]): Unit = state match {
         case Nil =>
           //Do nothing
-        case NewLine::Nil =>
+        case NL::Nil =>
           //Do nothing
-        case NewLine::tail =>
+        case NL::tail =>
           w.println
           w.print(spaces(level))
           fmt(level, tail)
-        case ConsText(t1, t2)::tail =>
+        case ConsT(t1, t2)::tail =>
           fmt(level, t1 :: t2 :: tail)
-        case BlockText(begin,end,Empty)::tail =>
+        case Block(begin,end,Empty)::tail =>
           w.print(begin + " " + end)
           fmt(level, tail)
-        case BlockText(begin,end,t)::tail =>
-          w.print(begin)
-          fmt(level+1, NewLine :: t :: Nil)
-          fmt(level, NewLine :: string(end) :: tail)
-        case SpaceText(t)::tail =>
+        case Block(begin,end,t)::tail =>
+          if (begin != "") w.print(begin)
+          val endb = if (end != "") string(end) else Empty
+          fmt(level+1, NL :: t :: Nil)
+          fmt(level, NL :: endb :: tail)
+        case SpaceT(t)::tail =>
           w.print(" ")
           fmt(level, t :: tail)
-        case StringText(s)::tail =>
+        case StringT(s)::tail =>
           w.print(s)
           fmt(level, tail)
         case Empty::tail =>
@@ -83,11 +84,11 @@ object Document {
 
   }
 
-  case class BlockText(beginSep: String, endSep: String, t: Text) extends Text
-  case class StringText(s: String) extends Text
-  case class SpaceText(t: Text) extends Text
-  case class ConsText(head: Text, tail: Text) extends Text
-  case object NewLine extends Text
+  case class Block(beginSep: String, endSep: String, t: Text) extends Text
+  case class StringT(s: String) extends Text
+  case class SpaceT(t: Text) extends Text
+  case class ConsT(head: Text, tail: Text) extends Text
+  case object NL extends Text
   case object Empty extends Text
 }
 

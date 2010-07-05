@@ -3,7 +3,7 @@ package gsd.linux
 import org.junit.Test
 import org.scalatest.junit.AssertionsForJUnit
 
-import TFMTranslation._
+import BFMTranslation._
 
 class FMTest extends AssertionsForJUnit with FMDocument {
   @Test
@@ -137,6 +137,21 @@ class FMTest extends AssertionsForJUnit with FMDocument {
 
     val fm = mkFeatureModel(Hierarchy.mkHierarchyMap(k), k)
     toText(fm).format(System.out)
+  }
+
+  @Test
+  def menu {
+    val k = KConfigParser.parseKConfig(
+      """
+      menu "Hello Test" {
+        config X boolean
+        config Y boolean
+        config Z boolean
+      }
+      """)
+
+    val fm = mkFeatureModel(Hierarchy.mkHierarchyMap(k), k)
+    toText(fm).format(System.out)
 
   }
 
@@ -145,14 +160,29 @@ class FMTest extends AssertionsForJUnit with FMDocument {
   def bool1 {
     val k = KConfigParser.parseKConfig {
       """
-      config A tristate {
-        prompt "..." if []
-        default [y] if [B]
+      menu "Hello World" {
+        depends on [X]
+        config A tristate {
+          prompt "..." if [B]
+          default [y] if [C]
+          choice boolean {
+            prompt "Some Choice" if []
+            config C1 boolean {
+              prompt "..." if []
+            }
+            config C2 boolean {
+              prompt "..." if []
+            }
+            config C3 boolean {
+              prompt "..." if []
+            }
+          }
+        }
       }
       """
     }
 
-    val fm = BFMTranslation.mkFeatureModel(Hierarchy.mkHierarchyMap(k), k)
+    val fm = mkFeatureModel(Hierarchy.mkHierarchyMap(k), k)
     toText(fm).print
   }
 }

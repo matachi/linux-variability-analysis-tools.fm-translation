@@ -20,30 +20,35 @@
 
 package gsd.linux
 
-case class FM[T <: Expr](features: List[Feature[T]], groups: List[Group[T]])
+case class FM[T <: Expr](features: List[Node[T]])
+
+sealed abstract class Node[T <: Expr]
+  (val children: List[Node[T]])
 
 //TODO parameterize TExpr so that we can substitute with BExpr
 sealed abstract class Feature[T <: Expr]
-  (name: String, ftype: FeatType,
-   constraints: List[T], children: List[Feature[T]])
+  (val name: String, ftype: FeatType,
+   constraints: List[T], cs: List[Node[T]]) extends Node[T](cs)
 
 case class OFeature[T <: Expr]
   (n: String, t: FeatType,
-   ctcs: List[T], cs: List[Feature[T]])
-  extends Feature[T](n, t, ctcs, cs)
+   ctcs: List[T], cs: List[Node[T]]) extends Feature[T](n, t, ctcs, cs)
 
 case class MFeature[T <: Expr]
   (n: String, t: FeatType,
-   ctcs: List[T], cs: List[Feature[T]])
-  extends Feature[T](n, t, ctcs, cs)
+   ctcs: List[T], cs: List[Node[T]]) extends Feature[T](n, t, ctcs, cs)
 
-sealed abstract class Group[T <: Expr](val members: List[String],
-                            val constraints: List[T])
+sealed abstract class Group[T <: Expr]
+  (val members: List[Node[T]],
+   val constraints: List[T]) extends Node[T](members)
 
-case class OrGroup[T <: Expr](mems: List[String],
-                   ctcs: List[T]) extends Group[T](mems, ctcs)
-case class XorGroup[T <: Expr](mems: List[String],
-                    ctcs: List[T]) extends Group[T](mems, ctcs)
+case class OrGroup[T <: Expr]
+  (mems: List[Node[T]],
+   ctcs: List[T]) extends Group[T](mems, ctcs)
+
+case class XorGroup[T <: Expr]
+  (mems: List[Node[T]],
+   ctcs: List[T]) extends Group[T](mems, ctcs)
 
 sealed abstract class FeatType
 case object BoolFeat extends FeatType
@@ -51,43 +56,32 @@ case object TriFeat extends FeatType
 case object IntFeat extends FeatType
 case object StringFeat extends FeatType
 
-
 import Document._
 
+//FIXME hard-coded for boolean format
 trait FMDocument extends TExprDocument with B2ExprDocument {
 
-  def toText[T <: Expr](fm: FM[T]): Text =
-    BlockText("{", "}", fm.features map toText[T]) :/:
-            BlockText("{", "}", fm.groups map toText[T])
-
-  def toText[T <: Expr](f: Feature[T]): Text = f match {
+  def toText[T <: Expr](f: Node[T]): Text = f match {
     case OFeature(name,t,ctcs,cs) =>
-      name :: "?" :: ":" :: toText(t) :: BlockText("{", "}", cs map toText[T]) :/:
-              BlockText("[", "]", iterToText(ctcs map toText[T])(_ :/: _)) :: NewLine
+      name :: "?" :: 
+              Block("", "", cs map toText[T]) :/:
+              Block("[", "]", iterToText(ctcs map toText[T])(_ :/: _)) :: NL
+    
     case MFeature(name,t,ctcs,cs) =>
-      name :: ":" :: toText(t) :: BlockText("{", "}", cs map toText[T]) :: NewLine
-  }
+      name :: ":" :: Block("", "", cs map toText[T]) :: NL
 
-  def toText(t: FeatType): Text = t match {
-    case BoolFeat => "boolean"
-    case TriFeat => "tristate"
-    case StringFeat => "string"
-    case IntFeat => "int"
+    case _ =>
+      //TODO
+      error("Unsupported (should only be groups here)!")
   }
-
-  def toText[T <: Expr](g: Group[T]): Text =
-    "(" +: (g.members map string reduceLeft { _ :: "|" :: _ }) +: {
-      g match {
-        case _: OrGroup[_] => ")+"
-        case _: XorGroup[_] => ")"
-      }
-    } :/: BlockText("[", "]",
-                    iterToText(g.constraints map toText[T])(_ :/: _)) :: NewLine
 
   def toText[T <: Expr](e: T): Text = e match {
     case t: TExpr => toExprText(t)
     case b: B2Expr => toExprText(b)
   }
+
+  def toText[T <: Expr](fm: FM[T]): Text =
+    Block("fm {", "}", fm.features map toText[T])
 
 }
 
@@ -114,7 +108,7 @@ trait TExprDocument {
 
       case TImplies(x,y) => _paren(x) :: "->" :: _paren(y)
 
-      case _ => StringText(e.toString)
+      case _ => StringT(e.toString)
     }
   }
 
@@ -138,7 +132,7 @@ trait B2ExprDocument {
       case B2Not(x) => "!" +: toExprText(x)
       case B2Id(x) => string(x)
 
-      case _ => StringText(e.toString)
+      case _ => StringT(e.toString)
     }
   }
 

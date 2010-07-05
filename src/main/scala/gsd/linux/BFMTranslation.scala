@@ -27,19 +27,20 @@ object BFMTranslation {
     }
 
     //Roots are features that are not present in the parentMap
-    val roots = k.features.filter { hi.contains }
+    val roots = k.features remove hi.contains
 
-    def mkFeature(c: CSymbol): List[Feature[T]] = c match {
+    def mkFeature(c: CSymbol): List[Node[T]] = c match {
       case c: CConfig =>
         List(OFeature(c.id, BoolFeat, ctcs(c.id), c.children flatMap mkFeature))
 
       case _: CMenu =>
         List(MFeature(c.id, BoolFeat, Nil, c.children flatMap mkFeature))
 
+      //FIXME CHOICES!
       case _: CChoice => c.children flatMap mkFeature
     }
 
-    FM(roots flatMap mkFeature, Nil) //TODO choices
+    FM(roots flatMap mkFeature)
   }
 
   /**
@@ -117,23 +118,19 @@ object BFMTranslation {
      * Constructs a list of BExpr (to be used in an OR) from a list of Defaults.
      */
     def mkDefaultList(rest: List[Default], prev: List[Default]): List[T] = {
-
       val negPrev =
         ((B2True: B2Expr) /: prev){ (x,y) => x & !toBExpr(y.cond) }
 
       rest match {
         case Nil => Nil
-        case h::tail => {
-          h match {
-            case Default(Yes, c) => negPrev & toBExpr(c)
-            case Default(Mod, c) => negPrev & toBExpr(c)
-            case Default(v: Value, c) => negPrev & toBExpr(c)
-            case Default(e, c) => negPrev & toBExpr(c) & toBExpr(e)
-          }
+        case (h@Default(e,c))::tail => {
+          negPrev & toBExpr(c) & toBExpr(e)
         } :: mkDefaultList(tail, h :: prev)
       } //end rest match
-    } //end _mkDef
-    
+    } //end mkDefaultList
+
+
+    //TODO why remove negative expressions?
     def _negExprs(d: Default) = d.iv == No || d.iv == Literal("")
 
     def mkRevDeps(lst: List[KExpr]) = lst map toBExpr
@@ -152,7 +149,15 @@ object BFMTranslation {
         (B2Id(c.id) implies consequent.||)
   }
 
+  /**
+   * The inherited constraints are those carried over from Menus and Choices.
+   * Since we maintain both Menus and Choices, we can safely ignore this for
+   * our translated ,pde;.
+   */
+  def mkInherited(c: AConfig): List[T] = Nil
+
   def mkConfigConstraints(c: AConfig): List[T] =
-    mkPresence(c) :: Nil
+    mkPresence(c) :: mkInherited(c)
+
 
 }
