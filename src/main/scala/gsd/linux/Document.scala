@@ -39,14 +39,14 @@ object Document {
     def ::(head: Text): Text = ConsT(head, SpaceT(this))
     def +:(head: Text): Text = ConsT(head, this)
     def :/:(head: Text) = if (head == Empty) this
-                          else head :: NL +: this
+                          else head +: NL +: this
 
     def print() = format(System.out)
 
     def format(w: PrintStream) = {
 
       def spaces(level: Int): String =
-        ((0 until level*2) map Function.const(' ')).mkString
+        ((0 until level*4) map Function.const(' ')).mkString
 
       def fmt(level: Int, state: List[Text]): Unit = state match {
         case Nil =>
@@ -60,13 +60,13 @@ object Document {
         case ConsT(t1, t2)::tail =>
           fmt(level, t1 :: t2 :: tail)
         case Block(begin,end,Empty)::tail =>
-          w.print(begin + " " + end)
+          if (begin !="" || end != "") w.print(begin + " " + end)
           fmt(level, tail)
         case Block(begin,end,t)::tail =>
           if (begin != "") w.print(begin)
-          val endb = if (end != "") string(end) else Empty
+          val endb = if (end != "") List(NL, string(end)) else Nil
           fmt(level+1, NL :: t :: Nil)
-          fmt(level, NL :: endb :: tail)
+          fmt(level, endb :: tail)
         case SpaceT(t)::tail =>
           w.print(" ")
           fmt(level, t :: tail)

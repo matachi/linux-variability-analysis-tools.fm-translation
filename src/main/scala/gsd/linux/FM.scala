@@ -23,12 +23,12 @@ package gsd.linux
 case class FM[T <: Expr](features: List[Node[T]])
 
 sealed abstract class Node[T <: Expr]
-  (val children: List[Node[T]])
+  (val children: List[Node[T]], val constraints: List[T])
 
 //TODO parameterize TExpr so that we can substitute with BExpr
 sealed abstract class Feature[T <: Expr]
   (val name: String, ftype: FeatType,
-   constraints: List[T], cs: List[Node[T]]) extends Node[T](cs)
+   cons: List[T], cs: List[Node[T]]) extends Node[T](cs, cons)
 
 case class OFeature[T <: Expr]
   (n: String, t: FeatType,
@@ -39,16 +39,29 @@ case class MFeature[T <: Expr]
    ctcs: List[T], cs: List[Node[T]]) extends Feature[T](n, t, ctcs, cs)
 
 sealed abstract class Group[T <: Expr]
-  (val members: List[Node[T]],
-   val constraints: List[T]) extends Node[T](members)
+  (val name: String,
+   val members: List[Node[T]],
+   cons: List[T]) extends Node[T](members, cons)
 
 case class OrGroup[T <: Expr]
-  (mems: List[Node[T]],
-   ctcs: List[T]) extends Group[T](mems, ctcs)
+  (n: String,
+   mems: List[Node[T]],
+   ctcs: List[T]) extends Group[T](n, mems, ctcs)
 
 case class XorGroup[T <: Expr]
-  (mems: List[Node[T]],
-   ctcs: List[T]) extends Group[T](mems, ctcs)
+  (n: String,
+   mems: List[Node[T]],
+   ctcs: List[T]) extends Group[T](n, mems, ctcs)
+
+case class MutexGroup[T <: Expr]
+  (n: String,
+   mems: List[Node[T]],
+   ctcs: List[T]) extends Group[T](n, mems, ctcs)
+
+case class OptGroup[T <: Expr]
+  (n: String,
+   mems: List[Node[T]],
+   ctcs: List[T]) extends Group[T](n, mems, ctcs)
 
 sealed abstract class FeatType
 case object BoolFeat extends FeatType
@@ -61,14 +74,29 @@ import Document._
 //FIXME hard-coded for boolean format
 trait FMDocument extends TExprDocument with B2ExprDocument {
 
+  def quote(s: Text) = "\"" +: s +: "\""
+  def crossTree[T <: Expr](ctcs: List[T]) =
+    if (ctcs.isEmpty) NL
+    else NL +: Block("[", "]", iterToText(ctcs map toText[T])(_ :/: _)) +: NL
+
   def toText[T <: Expr](f: Node[T]): Text = f match {
     case OFeature(name,t,ctcs,cs) =>
-      name :: "?" :: 
-              Block("", "", cs map toText[T]) :/:
-              Block("[", "]", iterToText(ctcs map toText[T])(_ :/: _)) :: NL
-    
+      name +: "?" ::  Block("", "", cs map toText[T]) :: crossTree(ctcs)
+
     case MFeature(name,t,ctcs,cs) =>
-      name :: ":" :: Block("", "", cs map toText[T]) :: NL
+      name :: Block("", "", cs map toText[T]) :: crossTree(ctcs)
+
+    case OptGroup(name, cs, ctcs) =>
+      "opt" :: quote(name) :: Block("", "", cs map toText[T]) :: crossTree(ctcs)
+
+    case OrGroup(name, cs, ctcs) =>
+      "or" :: quote(name) :: Block("", "", cs map toText[T]) :: crossTree(ctcs)
+
+    case XorGroup(name, cs, ctcs) =>
+      "xor" :: quote(name) :: Block("", "", cs map toText[T]) :: crossTree(ctcs)
+
+    case MutexGroup(name, cs, ctcs) =>
+      "mux" :: quote(name) :: Block("", "", cs map toText[T]) :: crossTree(ctcs)
 
     case _ =>
       //TODO
@@ -81,7 +109,7 @@ trait FMDocument extends TExprDocument with B2ExprDocument {
   }
 
   def toText[T <: Expr](fm: FM[T]): Text =
-    Block("fm {", "}", fm.features map toText[T])
+    (fm.features map toText[T]) reduceLeft { _ :/: _ }
 
 }
 
@@ -124,12 +152,12 @@ trait B2ExprDocument {
     e match {
       case B2True => "1"
       case B2False => "0"
-      case B2And(x,y) => _paren(x) :: "&" :: _paren(y)
-      case B2Or(x,y) => _paren(x) :: "|" :: _paren(y)
-      case B2Implies(x,y) => _paren(x) :: "->" :: _paren(y)
-      case B2Iff(x,y) => _paren(x) :: "<->" :: _paren(y)
+      case B2And(x,y) => _paren(x) :: "&&" :: _paren(y)
+      case B2Or(x,y) => _paren(x) :: "||" :: _paren(y)
+      case B2Implies(x,y) => _paren(x) :: "=>" :: _paren(y)
+      case B2Iff(x,y) => _paren(x) :: "<=>" :: _paren(y)
 
-      case B2Not(x) => "!" +: toExprText(x)
+      case B2Not(x) => "~" +: toExprText(x)
       case B2Id(x) => string(x)
 
       case _ => StringT(e.toString)

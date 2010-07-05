@@ -7,14 +7,14 @@ import BFMTranslation._
 
 class FMTest extends AssertionsForJUnit with FMDocument {
   @Test
-  def basic {
+  def dead {
     val k = KConfigParser.parseKConfig(
       """
-      config A boolean {
-        prompt "abc" if [C]
-        default [y] if [B]
-      }
+      config A boolean
       config B boolean
+      config C boolean
+      config D boolean
+      config E boolean
       """)
 
     val fm = mkFeatureModel(Hierarchy.mkHierarchyMap(k), k)

@@ -19,28 +19,46 @@ object BFMTranslation {
    */
   def mkFeatureModel(hi: Hierarchy, k: ConcreteKConfig) = {
 
+    import ExprUtil._
+
     //Mapping from Config Id -> Cross-Tree Constraints
-    val ctcs = Map() ++ {
+    val configCTCs = Map() ++ {
       k.toAbstractKConfig.configs map { c =>
         c.id -> mkConfigConstraints(c)
+      }
+    }
+
+    val choiceCTCs = Map() ++ {
+      k.toAbstractKConfig.choices map { c =>
+        c.memIds -> mkChoiceConstraints(c)
       }
     }
 
     //Roots are features that are not present in the parentMap
     val roots = k.features remove hi.contains
 
-    def mkFeature(c: CSymbol): List[Node[T]] = c match {
+    def mkFeature(c: CSymbol): Node[T] = c match {
       case c: CConfig =>
-        List(OFeature(c.id, BoolFeat, ctcs(c.id), c.children flatMap mkFeature))
+        OFeature(c.id, BoolFeat, configCTCs(c.id), c.children map mkFeature)
 
       case _: CMenu =>
-        List(MFeature(c.id, BoolFeat, Nil, c.children flatMap mkFeature))
+        MFeature(c.id.replace(" ","").replace("\"",""),
+                 BoolFeat, Nil, c.children map mkFeature)
 
-      //FIXME CHOICES!
-      case _: CChoice => c.children flatMap mkFeature
+      //TODO factor out function
+      case o: CChoice => o match {
+        case CChoice(Prompt(name,_),true,true,_,cs) =>
+          XorGroup(name, c.children map mkFeature, choiceCTCs(cs map { _.id }))
+        case CChoice(Prompt(name,_),true,false,_,cs) =>
+          MutexGroup(name, c.children map mkFeature, choiceCTCs(cs map { _.id }))
+        case CChoice(Prompt(name,_),false,true,_,cs) =>
+          OrGroup(name, c.children map mkFeature, choiceCTCs(cs map { _.id }))
+        case CChoice(Prompt(name,_),false,false,_,cs) =>
+          OptGroup(name, c.children map mkFeature, choiceCTCs(cs map { _.id }))
+      }
     }
 
-    FM(roots flatMap mkFeature)
+    removeTrueAndFalse(FM(roots map mkFeature))
   }
 
   /**
@@ -71,9 +89,10 @@ object BFMTranslation {
       case Or(x, y) => t(x) | t(y)
 
       case Not(Mod) | Not(No) | Not(Yes) => B2True //translates to T or F
+      case Not(Id(n)) => !B2Id(n) //This case is OK
       case Not(e) =>
-        println("Not: " + e)
-        !t(e) //TODO Check this, may make a constraint stronger
+        System.err.println("Unexpected Negation in Kconfig: " + e)
+        !t(e)
       case Id(n) => B2Id(n)
 
       case e => error("Unexpected expression: " + e + ": " + e.getClass)
@@ -152,9 +171,13 @@ object BFMTranslation {
   /**
    * The inherited constraints are those carried over from Menus and Choices.
    * Since we maintain both Menus and Choices, we can safely ignore this for
-   * our translated ,pde;.
+   * our translated model.
    */
   def mkInherited(c: AConfig): List[T] = Nil
+
+  def mkChoiceConstraints(c: AChoice): List[T] =
+    if (c.vis == Yes) Nil
+    else List(toBExpr(c.vis))
 
   def mkConfigConstraints(c: AConfig): List[T] =
     mkPresence(c) :: mkInherited(c)

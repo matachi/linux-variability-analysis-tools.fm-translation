@@ -24,7 +24,9 @@ import java.io.PrintStream
 import gsd.linux._
 import gsd.linux.CNFParser.CNFData
 
-object FMTranslationMain {
+import BFMTranslation._
+
+object FMTranslationMain extends FMDocument {
 
   /**
    * Parameters:
@@ -35,9 +37,14 @@ object FMTranslationMain {
   def main(args: Array[String]): Unit = {
     val out = if (args.size > 2) new PrintStream(args(2)) else System.out
 
+    println("Parsing CNF...")
     val CNFData(cnf, ids, gens) = CNFParser.parseCNFFile(args(1))
     val idMap = IdMapBuilder.mkIdMap(ids ++ gens)
+
+    println("Parsing Kconfig...")
     val ck = KConfigParser.parseKConfigFile(args(0))
+
+    println("Making Parent map...")
     val parentMap = Hierarchy.mkParentMap(ck)
 
     println("Loading SAT Solver...")
@@ -45,7 +52,12 @@ object FMTranslationMain {
     sat.addCNF(cnf)
 
     val pps = FMUtil.mkProperParents(sat, ck)
-    TFMTranslation.mkFeatureModel(pps, ck)
+//    val pps = parentMap //FIXME use the proper parent map
+
+    println("Translating to Feature Model...")
+    val fm = mkFeatureModel(pps, ck)
+
+    toText(fm).print
   }
   
 }
