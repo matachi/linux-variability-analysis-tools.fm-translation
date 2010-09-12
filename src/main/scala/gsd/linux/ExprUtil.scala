@@ -4,6 +4,30 @@ import kiama.rewriting.Rewriter
 
 object ExprUtil extends Rewriter {
 
+  def rewriteId(s: String) = s.replace("_", "x")
+
+  def isNumber(c: Char) = c >= '0' && c <= '9'
+
+  def fixIds[T <: Expr](fm: FM[T]): FM[T] = {
+    rewrite {
+      innermost {
+        rule {
+          case OFeature(name, t, ctcs, cs) if name.contains("_") =>
+            OFeature(rewriteId(name), t, ctcs, cs)
+          case MFeature(name, t, ctcs, cs) if name.contains("_") =>
+            MFeature(rewriteId(name), t, ctcs, cs)
+          case B2Id(n) if n.contains("_") => B2Id(rewriteId(n))
+
+          //Hack
+          case OFeature(name, t, ctcs, cs) if isNumber(name(0)) =>
+            OFeature("c" + name, t, ctcs, cs)
+          case MFeature(name, t, ctcs, cs) if isNumber(name(0)) =>
+            MFeature("c" + name, t, ctcs, cs)
+          case B2Id(n) if isNumber(n(0)) => B2Id("c" + n)
+        }
+      }
+    }(fm)
+  }
 
   def removeTrueAndFalse[T <: Expr](fm: FM[T]): FM[T] = {
     val f1 = rewrite {

@@ -3,7 +3,7 @@ package gsd.linux
 import org.scalatest.junit.AssertionsForJUnit
 import org.junit.Test
 
-class DocumentTest extends AssertionsForJUnit with FMDocument {
+class DocumentTest extends AssertionsForJUnit with ClaferDocument {
 
   type T = TExpr
 

@@ -57,6 +57,9 @@ object FMUtil {
         (r map { case (k,_) => k }) -> (pp map { case (k,v) => k -> v.get })
     }
 
+    println("Proper Parents: ")
+    properParentsPrime map { case(x,y) => x.id -> y.id } foreach println 
+
 
     //Return the new hierarchy.
     //Features that don't have a proper parent belong at the root (they don't

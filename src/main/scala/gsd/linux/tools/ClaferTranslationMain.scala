@@ -26,7 +26,7 @@ import gsd.linux.CNFParser.CNFData
 
 import BFMTranslation._
 
-object FMTranslationMain extends FMDocument {
+object ClaferTranslationMain extends ClaferDocument {
 
   /**
    * Parameters:
@@ -51,13 +51,13 @@ object FMTranslationMain extends FMDocument {
     val sat = new SATBuilder(idMap)
     sat.addCNF(cnf)
 
+    println("Finding proper parents...")
     val pps = FMUtil.mkProperParents(sat, ck)
-//    val pps = parentMap //FIXME use the proper parent map
 
     println("Translating to Feature Model...")
     val fm = mkFeatureModel(pps, ck)
 
-    toText(fm).print
+    toText(fm).format(out)
   }
   
 }

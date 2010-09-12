@@ -35,15 +35,15 @@ object BFMTranslation {
     }
 
     //Roots are features that are not present in the parentMap
-    val roots = k.features remove hi.contains
+    val roots = (k.menus ++ k.allConfigs) remove hi.contains
 
     def mkFeature(c: CSymbol): Node[T] = c match {
       case c: CConfig =>
         OFeature(c.id, BoolFeat, configCTCs(c.id), c.children map mkFeature)
 
       case _: CMenu =>
-        MFeature(c.id.replace(" ","").replace("\"",""),
-                 BoolFeat, Nil, c.children map mkFeature)
+        //TODO move this into FMDocument
+        MFeature(c.id, BoolFeat, Nil, c.children map mkFeature)
 
       //TODO factor out function
       case o: CChoice => o match {
@@ -58,12 +58,9 @@ object BFMTranslation {
       }
     }
 
-    removeTrueAndFalse(FM(roots map mkFeature))
+    fixIds(removeTrueAndFalse(FM(roots map mkFeature)))
   }
 
-  /**
-   * TODO clone of method in BooleanTranslation
-   */
   def toBExpr(in: KExpr): B2Expr = {
       def t(e: KExpr): B2Expr = e match {
       case No => B2False
@@ -110,12 +107,11 @@ object BFMTranslation {
    *
    * There is a bi-implication in the translation. As a result,
    * when an expression appears as the antecedent an implication, the
-   * Boolean translation may in fact, _strengthen_ the constraint. Thus, we
-   * remove these antecedent expressions to retain our goal of relaxing
-   * constraints in the Boolean model. The consequent expressions are unaffected
-   * and thus, all expression are kept.
+   * Boolean translation may _strengthen_ the constraint. Thus, we
+   * remove these antecedent expressions to relaxing constraints in the Boolean
+   * model. The consequent expressions are unaffected and all expression are kept.
    *
-   * Thus, the translation becomes:
+   * The translation becomes:
    *   PROMPT | ((REV_DEP ++ DEFAULTS).||.keepAsAntecedent => C) &
    *           (C => ((REV_DEP ++ DEFAULTS).||)
    */
@@ -149,7 +145,6 @@ object BFMTranslation {
     } //end mkDefaultList
 
 
-    //TODO why remove negative expressions?
     def _negExprs(d: Default) = d.iv == No || d.iv == Literal("")
 
     def mkRevDeps(lst: List[KExpr]) = lst map toBExpr

@@ -5,7 +5,7 @@ import org.scalatest.junit.AssertionsForJUnit
 
 import BFMTranslation._
 
-class FMTest extends AssertionsForJUnit with FMDocument {
+class ClaferTest extends AssertionsForJUnit with ClaferDocument {
   @Test
   def dead {
     val k = KConfigParser.parseKConfig(
@@ -178,6 +178,21 @@ class FMTest extends AssertionsForJUnit with FMDocument {
             }
           }
         }
+      }
+      """
+    }
+
+    val fm = mkFeatureModel(Hierarchy.mkHierarchyMap(k), k)
+    toText(fm).print
+  }
+
+
+  @Test
+  def underscore {
+    val k = KConfigParser.parseKConfig {
+      """
+      config ABC_XYZ boolean {
+        prompt "..." if [A_1 || B_1]
       }
       """
     }
