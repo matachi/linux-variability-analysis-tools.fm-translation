@@ -9,7 +9,7 @@ class DocumentTest extends AssertionsForJUnit with ClaferDocument {
 
   @Test
   def simple {
-    val fm = OFeature[T]("A", BoolFeat, Nil, List(
+    val fm = OFeature[T]("A_B_C_D_X_Y_Z", BoolFeat, Nil, List(
                OFeature[T]("B", BoolFeat, Nil, List(
                  OFeature[T]("X", BoolFeat, Nil, List(
                    OFeature[T]("Y", BoolFeat, Nil, Nil)

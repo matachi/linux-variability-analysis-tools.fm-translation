@@ -42,8 +42,8 @@ object BFMTranslation {
         OFeature(c.id, BoolFeat, configCTCs(c.id), c.children map mkFeature)
 
       case _: CMenu =>
-        //TODO move this into FMDocument
-        MFeature(c.id, BoolFeat, Nil, c.children map mkFeature)
+        //FIXME Remove quotes for menus
+        MFeature(c.id.substring(1, c.id.length - 1), BoolFeat, Nil, c.children map mkFeature)
 
       //TODO factor out function
       case o: CChoice => o match {
@@ -58,7 +58,7 @@ object BFMTranslation {
       }
     }
 
-    fixIds(removeTrueAndFalse(FM(roots map mkFeature)))
+    removeTrueAndFalse(FM(roots map mkFeature))
   }
 
   def toBExpr(in: KExpr): B2Expr = {
