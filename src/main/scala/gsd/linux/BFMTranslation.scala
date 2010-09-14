@@ -115,7 +115,7 @@ object BFMTranslation {
    *   PROMPT | ((REV_DEP ++ DEFAULTS).||.keepAsAntecedent => C) &
    *           (C => ((REV_DEP ++ DEFAULTS).||)
    */
-  def mkPresence(c: AConfig): T = {
+  def mkPresence(c: AConfig): List[T] = {
 
     /**
      * We remove KExpr that contains = or a reference to != y or != m. These
@@ -158,9 +158,8 @@ object BFMTranslation {
                      })
     val consequent = mkRevDeps(c.rev) ::: mkDefaults(c.defs)
 
-    toBExpr(c.pro) |
-      (antecedent.|| implies B2Id(c.id)) &
-        (B2Id(c.id) implies consequent.||)
+    (toBExpr(c.pro) | (B2Id(c.id) implies consequent.||)) ::
+      (antecedent map { ant => toBExpr(c.pro) | (ant implies B2Id(c.id)) })
   }
 
   /**
@@ -175,7 +174,7 @@ object BFMTranslation {
     else List(toBExpr(c.vis))
 
   def mkConfigConstraints(c: AConfig): List[T] =
-    mkPresence(c) :: mkInherited(c)
+    mkPresence(c) ::: mkInherited(c)
 
 
 }
