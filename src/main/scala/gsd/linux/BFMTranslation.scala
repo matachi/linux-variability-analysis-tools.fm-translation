@@ -2,6 +2,7 @@ package gsd.linux
 
 import FMUtil._
 import B2Expr._
+import collection.immutable.TreeSet
 
 object BFMTranslation {
 
@@ -24,18 +25,18 @@ object BFMTranslation {
     //Mapping from Config Id -> Cross-Tree Constraints
     val configCTCs = Map() ++ {
       k.toAbstractKConfig.configs map { c =>
-        c.id -> mkConfigConstraints(c)
+        c.id -> removeTrue(rewriteExpr(mkConfigConstraints(c)))
       }
     }
 
     val choiceCTCs = Map() ++ {
       k.toAbstractKConfig.choices map { c =>
-        c.memIds -> mkChoiceConstraints(c)
+        c.memIds -> removeTrue(rewriteExpr(mkChoiceConstraints(c)))
       }
     }
 
-    //Roots are features that are not present in the parentMap
-    val roots = (k.menus ++ k.allConfigs) remove hi.contains
+    //Configs that are referenced in configs but not declared
+    val freeVars = k.identifiers.toList -- (k.allConfigs map { _.id })
 
     def mkFeature(c: CSymbol): Node[T] = c match {
       case c: CConfig =>
@@ -58,7 +59,11 @@ object BFMTranslation {
       }
     }
 
-    removeTrueAndFalse(FM(roots map mkFeature))
+    def mkFreeVar(s: String): OFeature[T] =
+      OFeature(s, BoolFeat, Nil, Nil)
+
+    val root = mkFeature(k.root)
+    FM(mkFeature(k.root) :: (freeVars map mkFreeVar))
   }
 
   def toBExpr(in: KExpr): B2Expr = {

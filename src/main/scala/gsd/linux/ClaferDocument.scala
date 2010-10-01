@@ -2,22 +2,16 @@ package gsd.linux
 
 import Document._
 
+trait ClaferTransforms {
+  def fix(s: String): String =
+    if (s == "no") "cNo" // reserved word
+    else if (s.matches("""^[0-9].*""")) fix("c" + s)
+    else s.replaceAll("""[^a-zA-Z0-9_]""", "_")
+}
 
 //FIXME hard-coded for boolean format
 trait ClaferDocument extends B2ExprDocument {
 
-  // Regex to match any character that isn't alphanumeric
-  val pat = """[^a-zA-Z0-9]""".r
-
-  // Clafer fix identifiers
-  // def fix(s: String) = pat.replaceAllIn(s, "")
-
-  def fix(s: String) =
-    if (s.contains(" ")) "\"" + s + "\""
-    else s
-
-
-  // FIXME cross-tree constraint nesting
   def crossTree[T <: Expr](ctcs: List[T]) =
     if (ctcs.isEmpty) NL
     else NL +: Block("[", "]", iterToText(ctcs map toText[T])(_ :/: _)) +: NL
@@ -51,23 +45,23 @@ trait ClaferDocument extends B2ExprDocument {
 
 }
 
-trait B2ExprDocument {
+trait B2ExprDocument extends ClaferTransforms {
 
   def toExprText(e: B2Expr): Text = {
     def _paren(e: B2Expr): Text =
-      if (e.isTerminal || e.getClass == this.getClass) toExprText(e) //FIXME
+      if (e.isTerminal || e.getClass == this.getClass) toExprText(e) //FIXME a better way of determining bracket nesting
       else "(" +: toExprText(e) +: ")"
 
     e match {
-      case B2True => "1"
-      case B2False => "0"
+      case B2True => "1"  //FIXME Clafer doesn't have true
+      case B2False => "0" //FIXME Clafer doesn't have false
       case B2And(x,y) => _paren(x) :: "&&" :: _paren(y)
       case B2Or(x,y) => _paren(x) :: "||" :: _paren(y)
       case B2Implies(x,y) => _paren(x) :: "=>" :: _paren(y)
       case B2Iff(x,y) => _paren(x) :: "<=>" :: _paren(y)
 
       case B2Not(x) => "~" +: toExprText(x)
-      case B2Id(x) => string(x)
+      case B2Id(x) => string(fix(x))
 
       case _ => StringT(e.toString)
     }
