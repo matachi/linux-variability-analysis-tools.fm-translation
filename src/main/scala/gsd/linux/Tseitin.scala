@@ -24,8 +24,8 @@ package gsd.linux
  * A simple Tseitin's Transformation that introduces a new variable for each
  * sub-expression.
  *
- * This should eventually replace the manual transformation done in the LVAT
- * BooleanTranslation.
+ * An improved version should eventually replace the manual transformation done
+ * in the LVAT BooleanTranslation.
  *
  * @author Steven She (shshe@gsd.uwaterloo.ca)
  */
