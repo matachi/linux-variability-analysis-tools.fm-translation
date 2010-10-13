@@ -24,7 +24,7 @@ import org.junit.Test
 
 class TseitinTest extends Tseitin {
 
-  implicit def toBId(s: String) = BId(s)
+  implicit def toB2Id(s: String) = B2Id(s)
 
   @Test def testNot {
     assert(transform(!"A") == List(BId("x1"), "x1" iff !"x2", "x2" iff "A"))

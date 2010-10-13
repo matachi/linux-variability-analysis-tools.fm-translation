@@ -20,7 +20,7 @@
 
 package gsd.linux
 
-case class FM[T <: Expr](features: List[Node[T]])
+case class FM[T <: Expr](val root: MFeature[T])
 
 sealed abstract class Node[T <: Expr]
   (val children: List[Node[T]], val constraints: List[T])
@@ -39,27 +39,27 @@ case class MFeature[T <: Expr]
 
 sealed abstract class Group[T <: Expr]
   (val name: String,
-   val members: List[Node[T]],
+   val members: List[Feature[T]],
    cons: List[T]) extends Node[T](members, cons)
 
 case class OrGroup[T <: Expr]
   (n: String,
-   mems: List[Node[T]],
+   mems: List[Feature[T]],
    ctcs: List[T]) extends Group[T](n, mems, ctcs)
 
 case class XorGroup[T <: Expr]
   (n: String,
-   mems: List[Node[T]],
+   mems: List[Feature[T]],
    ctcs: List[T]) extends Group[T](n, mems, ctcs)
 
 case class MutexGroup[T <: Expr]
   (n: String,
-   mems: List[Node[T]],
+   mems: List[Feature[T]],
    ctcs: List[T]) extends Group[T](n, mems, ctcs)
 
 case class OptGroup[T <: Expr]
   (n: String,
-   mems: List[Node[T]],
+   mems: List[Feature[T]],
    ctcs: List[T]) extends Group[T](n, mems, ctcs)
 
 sealed abstract class FeatType

@@ -61,7 +61,7 @@ trait ClaferDocument extends B2ExprDocument {
   }
 
   implicit def toText[T <: Expr](fm: FM[T]): Text =
-    (fm.features map toText[T]) reduceLeft { _ :/: _ }
+    toText[T](fm.root)
 
 }
 

@@ -52,7 +52,7 @@ object ClaferTranslationMain extends ClaferDocument {
     sat.addCNF(cnf)
 
     println("Finding proper parents...")
-    val pps = FMUtil.mkProperParents(sat, ck)
+    val pps = FMTranslationUtil.mkProperParents(sat, ck)
 
     println("Translating to Feature Model...")
     val fm = mkFeatureModel(pps, ck)

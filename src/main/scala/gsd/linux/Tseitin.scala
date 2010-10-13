@@ -40,24 +40,24 @@ trait Tseitin {
   /**
    * Assumes (bi-)implications have been factored out.
    */
-  def transform(in: BExpr): List[BExpr] = {
-    def _tt(e: BExpr): Pair[BId, List[BExpr]] = {
-      val eId = BId(IdGen.next)
+  def transform(in: B2Expr): List[B2Expr] = {
+    def _tt(e: B2Expr): Pair[B2Id, List[B2Expr]] = {
+      val eId = B2Id(IdGen.next)
       e match {
-        case n: BId => (eId, List(!eId || n, eId || !n))
-        case BNot(x) => {
+        case n: B2Id => (eId, List(!eId | n, eId | !n))
+        case B2Not(x) => {
           val (xId, xExprs) = _tt(x)
-          eId -> ((!eId || !xId) :: (eId || xId) :: xExprs)
+          eId -> ((!eId | !xId) :: (eId | xId) :: xExprs)
         }
-        case BAnd(x,y) => {
+        case B2And(x,y) => {
           val (xId, xExprs) = _tt(x)
           val (yId, yExprs) = _tt(y)
-          eId -> ((!eId || xId) :: (!eId || yId) :: (eId || !xId || !yId) :: xExprs ::: yExprs)
+          eId -> ((!eId | xId) :: (!eId | yId) :: (eId | !xId | !yId) :: xExprs ::: yExprs)
         }
-        case BOr(x,y) => {
+        case B2Or(x,y) => {
           val (xId, xExprs) = _tt(x)
           val (yId, yExprs) = _tt(y)
-          eId -> ((eId || !xId) :: (eId || !yId) :: (!eId || xId || yId) :: xExprs ::: yExprs)
+          eId -> ((eId | !xId) :: (eId | !yId) :: (!eId | xId | yId) :: xExprs ::: yExprs)
         }
         case _ => error("not supported: " + e + " from: " + in)
       }

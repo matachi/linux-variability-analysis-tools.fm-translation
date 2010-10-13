@@ -29,10 +29,10 @@ object IdMapBuilder {
   def identifiers(c: CNF): Set[String] =
     Set() ++ c.flatMap[String]{ _.map { case e: Lit => e.value }}
   
-  def identifiers(e: BExpr): Set[String] = {
+  def identifiers(e: B2Expr): Set[String] = {
     val rw = new Object with Rewriter
     rw.collects {
-      case BId(n) => n
+      case B2Id(n) => n
     }(e)
   }
 

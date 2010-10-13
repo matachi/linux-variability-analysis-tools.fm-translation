@@ -20,7 +20,7 @@
 
 package gsd.linux
 
-object FMUtil {
+object FMTranslationUtil {
 
   type Hierarchy = Map[CSymbol, CSymbol]
 

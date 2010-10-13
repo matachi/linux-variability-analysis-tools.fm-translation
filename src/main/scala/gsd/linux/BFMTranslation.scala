@@ -20,9 +20,10 @@
 
 package gsd.linux
 
-import FMUtil._
+import FMTranslationUtil._
 import B2Expr._
-import collection.immutable.TreeSet
+
+import TypeFilterList._
 
 object BFMTranslation {
 
@@ -58,32 +59,44 @@ object BFMTranslation {
     //Configs that are referenced in configs but not declared
     val freeVars = k.identifiers.toList -- (k.allConfigs map { _.id })
 
+    def mkConfig(c: CConfig): OFeature[T] =
+      OFeature(c.id, BoolFeat, configCTCs(c.id), c.children map mkFeature)
+
+    //FIXME Remove quotes for menus
+    def mkMenu(m: CMenu): MFeature[T] =
+      MFeature(m.id.substring(1, m.id.length - 1), BoolFeat, Nil, m.children map mkFeature)
+
     def mkFeature(c: CSymbol): Node[T] = c match {
-      case c: CConfig =>
-        OFeature(c.id, BoolFeat, configCTCs(c.id), c.children map mkFeature)
+      case c: CConfig => mkConfig(c)
+      case m: CMenu => mkMenu(m)
 
-      case _: CMenu =>
-        //FIXME Remove quotes for menus
-        MFeature(c.id.substring(1, c.id.length - 1), BoolFeat, Nil, c.children map mkFeature)
+      //Assuming choices have only configs as children. Holds for Linux, not
+      //sure about other Kconfig projects.
+      case o: CChoice =>
+        val configs = c.children.typeFilter[CConfig]
+        assert(configs.size == c.children.size, "Choice members aren't all configs!")
 
-      //TODO factor out function
-      case o: CChoice => o match {
-        case CChoice(Prompt(name,_),true,true,_,cs) =>
-          XorGroup(name, c.children map mkFeature, choiceCTCs(cs map { _.id }))
-        case CChoice(Prompt(name,_),true,false,_,cs) =>
-          MutexGroup(name, c.children map mkFeature, choiceCTCs(cs map { _.id }))
-        case CChoice(Prompt(name,_),false,true,_,cs) =>
-          OrGroup(name, c.children map mkFeature, choiceCTCs(cs map { _.id }))
-        case CChoice(Prompt(name,_),false,false,_,cs) =>
-          OptGroup(name, c.children map mkFeature, choiceCTCs(cs map { _.id }))
-      }
+        o match {
+          case CChoice(Prompt(name,_),true,true,_,cs) =>
+            XorGroup(name, configs map mkConfig, choiceCTCs(cs map { _.id }))
+          case CChoice(Prompt(name,_),true,false,_,cs) =>
+            MutexGroup(name, configs map mkConfig, choiceCTCs(cs map { _.id }))
+          case CChoice(Prompt(name,_),false,true,_,cs) =>
+            OrGroup(name, configs map mkConfig, choiceCTCs(cs map { _.id }))
+          case CChoice(Prompt(name,_),false,false,_,cs) =>
+            OptGroup(name, configs map mkConfig, choiceCTCs(cs map { _.id }))
+        }
     }
 
     def mkFreeVar(s: String): OFeature[T] =
       OFeature(s, BoolFeat, Nil, Nil)
 
-    val root = mkFeature(k.root)
-    FM(mkFeature(k.root) :: (freeVars map mkFreeVar))
+    val root = mkMenu(k.root) match {
+      case MFeature(name, t, ctcs, cs) =>
+        MFeature(name, t, ctcs, cs ::: (freeVars map mkFreeVar))
+    }
+
+    FM(root)
   }
 
   def toBExpr(in: KExpr): B2Expr = {

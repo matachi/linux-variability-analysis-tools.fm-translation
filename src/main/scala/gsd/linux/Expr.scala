@@ -45,6 +45,10 @@ sealed abstract class B2Expr extends Expr {
   def implies(o: B2Expr): B2Expr = B2Implies(this, o)
 
   def unary_!(): B2Expr = B2Not(this)
+  def splitConjunctions(): List[B2Expr] = this match {
+    case B2And(x,y) => x.splitConjunctions ::: y.splitConjunctions
+    case e => List(e)
+  }
 }
 case class B2Not(e: B2Expr) extends B2Expr with Terminal
 case class B2And(l: B2Expr, r: B2Expr) extends B2Expr
