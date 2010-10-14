@@ -128,4 +128,53 @@ class FMBDDTest extends AssertionsForJUnit {
     bk.free
   }
 
+  /**
+   * Default 'y' if B is equivalent to Default 'B'
+   */
+  @Test def multipleDefaults {
+    val k = """
+    config A boolean {
+      default [y] if [B]
+      default [y] if [C]
+    }
+    config B boolean {
+      prompt "..." if []
+    }
+    config C boolean {
+      prompt "..." if []
+    }
+    """
+    val bk = b.mkBDD(t(k))
+    assert(bk === rootVar.andWith (
+      ("A" biimpWith ("B" orWith ("B".not andWith "C"))) // redundant but clearer
+      ))
+    bk.free
+  }
+
+  @Test def promptAndDefaults {
+    val k = """
+    config A boolean {
+      prompt "..." if [B]
+      default [y] if [C]
+      default [y] if [D]
+    }
+    config B boolean {
+      prompt "..." if []
+    }
+    config C boolean {
+      prompt "..." if []
+    }
+    config D boolean {
+      prompt "..." if []
+    }
+    """
+    val bk = b.mkBDD(t(k))
+    assert(bk === rootVar.andWith (
+      "B" orWith ("A" biimpWith ("C" orWith ("C".not andWith "D"))) // redundant but clearer
+      ))
+    bk.free
+  }
+
+  //TODO Tristate tests
+
 }
