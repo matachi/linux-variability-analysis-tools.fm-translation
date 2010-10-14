@@ -32,7 +32,7 @@ class FMBDDTest extends AssertionsForJUnit {
     bk.free
   }
 
-  @Test def deadFeature {
+  @Test def dead {
     val k = """
     config A boolean
     """
@@ -41,6 +41,91 @@ class FMBDDTest extends AssertionsForJUnit {
     bk.free
   }
 
-  //TODO BDD Domain
+  @Test def nesting {
+    val k = """
+    config A boolean {
+      prompt "..." if []
+      config B boolean {
+        prompt "..." if []
+      }
+    }
+    """
+    val bk = b.mkBDD(t(k))
+    assert(bk === rootVar.andWith("B" impWith "A"))
+    bk.free
+  }
+
+  @Test def menu {
+    val k = """
+    config A boolean {
+      prompt "..." if []
+      menu "B" {
+      }
+    }
+    """
+    val bk = b.mkBDD(t(k))
+    assert(bk === rootVar.andWith("B" biimpWith "A"))
+    bk.free
+  }
+
+  @Test def derivedConfig {
+    val k = """
+    config A boolean {
+      default [y] if [B]
+    }
+    config B boolean {
+      prompt "..." if []
+    }
+    """
+    val bk = b.mkBDD(t(k))
+    assert(bk === rootVar.andWith("B" biimpWith "A"))
+    bk.free
+  }
+
+  @Test def reverseDependency1 {
+    val k = """
+    config A boolean
+    config B boolean {
+      prompt "..." if []
+      select A if []
+    }
+    """
+    val bk = b.mkBDD(t(k))
+    assert(bk === rootVar.andWith("B" biimpWith "A"))
+    bk.free
+  }
+
+  @Test def reverseDependency2 {
+    val k = """
+    config A boolean
+    config B boolean {
+      prompt "..." if []
+      select A if []
+    }
+    config C boolean {
+      prompt "..." if []
+      select A if []
+    }
+    """
+    val bk = b.mkBDD(t(k))
+    assert(bk === rootVar.andWith("A" biimpWith ("B" orWith "C")))
+    bk.free
+  }
+
+  @Test def conditionalPrompt {
+    val k = """
+    config A boolean {
+      prompt "..." if [B]
+    }
+    config B boolean {
+      prompt "..." if []
+    }
+    """
+    val bk = b.mkBDD(t(k))
+    assert(bk === rootVar.andWith (
+        ("A" andWith "B") orWith "A".not
+      ))
+    bk.free
+  }
 
 }
