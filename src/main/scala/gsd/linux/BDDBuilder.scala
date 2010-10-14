@@ -40,8 +40,6 @@ object BDDBuilder {
       for (bdd <- lst) bdd.free
       result
     }
-    def orWithAll: BDD =  lst reduceLeft { _ orWith _ }
-    def andWithAll: BDD =  lst reduceLeft { _ andWith _ }
   }
 }
 
@@ -79,6 +77,9 @@ class BDDBuilder(val idMap: Map[String, Int]) {
   def one  = factory one
   def zero = factory zero
   def close = factory.done
+
+  def ithVar(s: String): BDD =
+    factory ithVar idMap(s)
 
   def reset = {
     factory.reset

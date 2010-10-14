@@ -1,12 +1,17 @@
 package gsd.linux
 
 import org.junit.{Test, Before}
+import org.scalatest.junit.AssertionsForJUnit
+import net.sf.javabdd.BDD
 
-class FMBDDTest {
+class FMBDDTest extends AssertionsForJUnit {
+
+  val rootVar = "Linux Kernel Configuration"
 
   val b = new BDDBuilder(
-    Map() ++ (('a' to 'z').toList.zipWithIndex
-                  .map { case (k,v) => ("" + k, v + 1) })) with FMBDDBuilder
+    Map() ++ ( (rootVar :: ('A' to 'Z').toList)
+                  .zipWithIndex
+                  .map { case (k,v) => (k.toString, v + 1) })) with FMBDDBuilder
 
   def t(s: String): FM[B2Expr] = {
     val ck = KConfigParser.parseKConfig(s)
@@ -14,12 +19,28 @@ class FMBDDTest {
     BFMTranslation.mkFeatureModel(parents, ck)
   }
 
-  @Test def simple {
+  implicit def toBDD(s: String): BDD = b ithVar s
+
+  @Test def prompt {
+    val k = """
+    config A boolean {
+      prompt "..." if []
+    }
+    """
+    val bk = b.mkBDD(t(k))
+    assert(bk === b.ithVar(rootVar))
+    bk.free
+  }
+
+  @Test def deadFeature {
     val k = """
     config A boolean
     """
-    println(b.mkBDD(t(k)))
-    assert(true)
+    val bk = b.mkBDD(t(k))
+    assert(bk === rootVar.andWith("A".not))
+    bk.free
   }
+
+  //TODO BDD Domain
 
 }
