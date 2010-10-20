@@ -9,6 +9,7 @@ class FMBDDTest extends AssertionsForJUnit {
   val rootVar = "Linux Kernel Configuration"
 
   val b = new BDDBuilder(
+    // Id Map
     Map() ++ ( (rootVar :: ('A' to 'Z').toList)
                   .zipWithIndex
                   .map { case (k,v) => (k.toString, v + 1) })) with FMBDDBuilder
