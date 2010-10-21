@@ -41,7 +41,7 @@ object BFMTranslation {
    */
   def mkFeatureModel(hi: Hierarchy, k: ConcreteKConfig) = {
 
-    import ExprUtil._
+    import BExprUtil._
 
     //Mapping from Config Id -> Cross-Tree Constraints
     val configCTCs = Map() ++ {

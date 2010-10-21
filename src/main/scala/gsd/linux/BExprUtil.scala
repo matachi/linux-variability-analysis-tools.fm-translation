@@ -22,7 +22,7 @@ package gsd.linux
 
 import kiama.rewriting.Rewriter
 
-object ExprUtil extends Rewriter {
+object BExprUtil extends Rewriter {
 
   val sFixExpr =
     innermost {
@@ -48,5 +48,17 @@ object ExprUtil extends Rewriter {
 
   def rewriteExpr(lst: List[BExpr]): List[BExpr] =
     rewrite(sFixExpr)(lst)
-  
+
+  def subst(replaceWith: BExpr, lookFor: BExpr)(in: BExpr): BExpr = {
+    def s(e: BExpr): BExpr = e match {
+      case BImplies(x,y) => BImplies(s(x), s(y))
+      case BIff(x,y) => BIff(s(x), s(y))
+      case BOr(x,y)  => BOr(s(x), s(y))
+      case BAnd(x,y) => BAnd(s(x), s(y))
+      case _ if e == lookFor => replaceWith
+      case _ => error("Unsupported! Is input expression in the right format?")
+    }
+    s(in)
+  }
+
 }

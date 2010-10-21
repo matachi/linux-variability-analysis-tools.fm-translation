@@ -116,9 +116,14 @@ case class TEq(left: TExpr, right: TExpr) extends TExpr {
 
 
 
-object TFMTranslation {
-
+class TFMTranslation {
   import TExpr._
+
+  object IdGen {
+    var i = 0
+    def next = { i+=1; "_X" + i }
+    def allIds = (1 to i).map { "_X" + _ }.toList
+  }
 
   /**
    * FIXME Assuming: tristate, no inherited, ranges.
@@ -127,9 +132,9 @@ object TFMTranslation {
   def translate(c: AConfig): List[BExpr] = c match {
     case AConfig(id, t, inh, pro, defs, rev, ranges) =>
       val rds = ((TNo: TExpr)/: rev){ _ | toTExpr(_) }
+      val rdsId = if (rds == TNo) TNo else TId(IdGen.next)
 
       println("Reverse Dependency: " + rds)
-
       def t(rest: List[Default], prev: List[Default]): List[BExpr] =
         rest match {
           case Nil => Nil
@@ -140,10 +145,10 @@ object TFMTranslation {
             } & (toTExpr(cond) > TNo)
 
             //problem is here: toTExpr(e)
-            (ante implies (TId(id) eq (toTExpr(e) | rds))) :: t(tail, h::prev)
+            (ante implies (TId(id) eq (toTExpr(e) | rdsId))) :: t(tail, h::prev)
         }
 
-    t(defs, Nil)
+    (rdsId eq rds) :: t(defs, Nil)
   }
 
   def translate(k: AbstractKConfig): List[BExpr] =

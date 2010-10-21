@@ -32,7 +32,7 @@ class TFMTest extends AssertionsForJUnit {
       """
 
     val ak = parseKConfig(in).toAbstractKConfig
-    TFMTranslation.translate(ak) map { _.simplify } foreach println
+    new TFMTranslation().translate(ak) map { _.simplify } foreach println
   }
 
 }
