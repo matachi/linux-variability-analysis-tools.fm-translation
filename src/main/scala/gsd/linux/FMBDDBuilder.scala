@@ -7,7 +7,7 @@ import net.sf.javabdd.BDD
  * TODO Make a BExpr instead of a BDD
  */
 trait FMBDDBuilder extends BDDBuilder {
-  type E = B2Expr 
+  type E = BExpr
 
   def mkAndWithAll(lst: List[BDD]) = (one /: lst){ _ andWith _ }
 

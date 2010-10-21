@@ -14,7 +14,7 @@ class FMBDDTest extends AssertionsForJUnit {
                   .zipWithIndex
                   .map { case (k,v) => (k.toString, v + 1) })) with FMBDDBuilder
 
-  def t(s: String): FM[B2Expr] = {
+  def t(s: String): FM[BExpr] = {
     val ck = KConfigParser.parseKConfig(s)
     val parents = Hierarchy.mkParentMap(ck)
     BFMTranslation.mkFeatureModel(parents, ck)

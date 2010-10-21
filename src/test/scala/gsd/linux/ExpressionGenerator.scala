@@ -42,33 +42,33 @@ trait ExpressionGenerator {
     Map() ++ result
   }
 
-  val genId : Gen[B2Id] =
+  val genId : Gen[BId] =
     for (a <- alphaChar; b <- alphaChar)
-      yield B2Id("" + a + b)
+      yield BId("" + a + b)
 
-  def genAnd(i : Int) : Gen[B2And] =
+  def genAnd(i : Int) : Gen[BAnd] =
     for (l <- genExpr(i); r <- genExpr(i))
-      yield B2And(l, r)
+      yield BAnd(l, r)
 
-  def genImplies(i : Int) : Gen[B2Implies] =
+  def genImplies(i : Int) : Gen[BImplies] =
     for (l <- genExpr(i); r <- genExpr(i))
-      yield B2Implies(l, r)
+      yield BImplies(l, r)
 
-  def genOr(i : Int) : Gen[B2Or] =
+  def genOr(i : Int) : Gen[BOr] =
     for (l <- genExpr(i); r <- genExpr(i))
-      yield B2Or(l, r)
+      yield BOr(l, r)
 
-  def genNot(i : Int) : Gen[B2Not] =
+  def genNot(i : Int) : Gen[BNot] =
     for (expr <- genExpr(i))
-      yield B2Not(expr)
+      yield BNot(expr)
 
   def genOp(i : Int) =
     oneOf( genAnd(i), genOr(i), genNot(i), genImplies(i) )
 
-  implicit def arbExpr : Arbitrary[B2Expr] =
+  implicit def arbExpr : Arbitrary[BExpr] =
     Arbitrary(sized { s => genExpr(s) })
 
-  def genExpr(i : Int) : Gen[B2Expr] =
+  def genExpr(i : Int) : Gen[BExpr] =
     if (i == 0) genId else genOp(i / 3)
 }
 

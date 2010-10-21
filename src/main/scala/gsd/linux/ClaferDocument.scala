@@ -32,11 +32,11 @@ trait ClaferTransforms {
 //FIXME hard-coded for boolean format
 trait ClaferDocument extends B2ExprDocument {
 
-  def crossTree(ctcs: List[B2Expr]) =
+  def crossTree(ctcs: List[BExpr]) =
     if (ctcs.isEmpty) NL
     else NL +: Block("[", "]", iterToText(ctcs map toText)(_ :/: _)) +: NL
 
-  def toText(f: Node[B2Expr]): Text = f match {
+  def toText(f: Node[BExpr]): Text = f match {
     case OFeature(name,t,ctcs,cs) =>
       fix(name) +: "?" ::  Block("{", "}", cs map toText) :: crossTree(ctcs)
 
@@ -56,29 +56,29 @@ trait ClaferDocument extends B2ExprDocument {
       "mux" :: fix(name) :: Block("{", "}", cs map toText) :: crossTree(ctcs)
   }
 
-  def toText(e: B2Expr): Text = toExprText(e)
+  def toText(e: BExpr): Text = toExprText(e)
 
-  implicit def toText(fm: FM[B2Expr]): Text =
+  implicit def toText(fm: FM[BExpr]): Text =
     toText(fm.root)
 
 }
 
 trait B2ExprDocument extends ClaferTransforms {
 
-  def toExprText(e: B2Expr): Text = {
-    def _paren(e: B2Expr): Text =
+  def toExprText(e: BExpr): Text = {
+    def _paren(e: BExpr): Text =
       "(" +: toExprText(e) +: ")"
 
     e match {
-      case B2True => "1"  //FIXME Clafer doesn't have true
-      case B2False => "0" //FIXME Clafer doesn't have false
-      case B2And(x,y) => _paren(x) :: "&&" :: _paren(y)
-      case B2Or(x,y) => _paren(x) :: "||" :: _paren(y)
-      case B2Implies(x,y) => _paren(x) :: "=>" :: _paren(y)
-      case B2Iff(x,y) => _paren(x) :: "<=>" :: _paren(y)
+      case BTrue => "1"  //FIXME Clafer doesn't have true
+      case BFalse => "0" //FIXME Clafer doesn't have false
+      case BAnd(x,y) => _paren(x) :: "&&" :: _paren(y)
+      case BOr(x,y) => _paren(x) :: "||" :: _paren(y)
+      case BImplies(x,y) => _paren(x) :: "=>" :: _paren(y)
+      case BIff(x,y) => _paren(x) :: "<=>" :: _paren(y)
 
-      case B2Not(x) => "~" +: toExprText(x)
-      case B2Id(x) => string(fix(x))
+      case BNot(x) => "~" +: toExprText(x)
+      case BId(x) => string(fix(x))
 
       case _ => StringT(e.toString)
     }

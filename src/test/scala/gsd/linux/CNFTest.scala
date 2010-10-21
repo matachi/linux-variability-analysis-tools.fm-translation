@@ -12,14 +12,14 @@ import BDDBuilder._
 
 class CNFTest extends Suite with Checkers with ExpressionGenerator {
 
-  implicit def toBId(s: String) = B2Id(s)
+  implicit def toBId(s: String) = BId(s)
 
   /**
    * Tests that if e is satisfiable, then the Tseitin transformation should
    * also be satisfiable with the same assignment.
    */
   @Test def testCNFUsingBDDs = check {
-    forAll { (e: B2Expr) =>
+    forAll { (e: BExpr) =>
       println("Testing: " + e)
       val cnf = e.toCNF.toExpression
       val bb = new BDDBuilder(mkIdMap(identifiers(cnf)))

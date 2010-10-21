@@ -29,12 +29,12 @@ object TExpr {
 }
 
 abstract class TExpr {
-  def toBExpr: (B2Expr, B2Expr)
+  def toBExpr: (BExpr, BExpr)
 
   /**
    * Returns a single boolean expression.
    */
-  def eq(other: TExpr): B2Expr = other match {
+  def eq(other: TExpr): BExpr = other match {
     case TNo => toBExpr match {
       case (e1, e2) => !e1 & !e2
     }
@@ -50,7 +50,7 @@ abstract class TExpr {
   /**
    * Returns a single boolean expression.
    */
-  def <=(other: TExpr): B2Expr = other match {
+  def <=(other: TExpr): BExpr = other match {
     case TYes => (this eq TYes) | (this eq TMod) | (this eq TNo)
     case TMod => (this eq TMod) | (this eq TNo)
     case TNo =>  (this eq TNo)
@@ -64,7 +64,7 @@ abstract class TExpr {
   /**
    * Returns a single boolean expression.
    */
-  def >(other: TExpr): B2Expr =
+  def >(other: TExpr): BExpr =
     !(this <= other)
 
   def teq(other: TExpr): TExpr =
@@ -76,17 +76,17 @@ abstract class TExpr {
 }
 
 case object TYes extends TExpr {
-  def toBExpr = (B2True, B2True) //(1,1)
+  def toBExpr = (BTrue, BTrue) //(1,1)
 }
 case object TMod extends TExpr {
-  def toBExpr = (B2True, B2False) //(1,0)
+  def toBExpr = (BTrue, BFalse) //(1,0)
 }
 case object TNo extends TExpr {
-  def toBExpr = (B2False, B2False) //(0,0)
+  def toBExpr = (BFalse, BFalse) //(0,0)
 }
 
 case class TId(v: String) extends TExpr {
-  def toBExpr = (B2Id(v + "_1"), B2Id(v + "_2"))
+  def toBExpr = (BId(v + "_1"), BId(v + "_2"))
 }
 
 case class TAnd(left: TExpr, right: TExpr) extends TExpr {
@@ -124,13 +124,13 @@ object TFMTranslation {
    * FIXME Assuming: tristate, no inherited, ranges.
    * Always introducing new variable for reverse dependency expression.
    */
-  def translate(c: AConfig): List[B2Expr] = c match {
+  def translate(c: AConfig): List[BExpr] = c match {
     case AConfig(id, t, inh, pro, defs, rev, ranges) =>
       val rds = ((TNo: TExpr)/: rev){ _ | toTExpr(_) }
 
       println("Reverse Dependency: " + rds)
 
-      def t(rest: List[Default], prev: List[Default]): List[B2Expr] =
+      def t(rest: List[Default], prev: List[Default]): List[BExpr] =
         rest match {
           case Nil => Nil
           
@@ -146,7 +146,7 @@ object TFMTranslation {
     t(defs, Nil)
   }
 
-  def translate(k: AbstractKConfig): List[B2Expr] =
+  def translate(k: AbstractKConfig): List[BExpr] =
     k.configs flatMap translate
 
 }

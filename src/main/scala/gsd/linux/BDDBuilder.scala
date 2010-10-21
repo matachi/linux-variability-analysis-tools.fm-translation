@@ -49,26 +49,26 @@ class BDDBuilder(val idMap: Map[String, Int]) {
   val factory = BDDFactory.init("java", 15000000, 1000000)
   factory.setVarNum(idMap.keySet.size * 2)
 
-  implicit def toBDDExpr(e: B2Expr) = new {
+  implicit def toBDDExpr(e: BExpr) = new {
     def mkBDD: BDD = BDDBuilder.this.mkBDD(e)
   }
 
-  def apply(e: B2Expr): BDD = mkBDD(e)
+  def apply(e: BExpr): BDD = mkBDD(e)
 
-  def mkBDD(in: B2Expr): BDD =
+  def mkBDD(in: BExpr): BDD =
     mkBDDWithConjunctions(in.splitConjunctions)
 
-  def mkBDDWithConjunctions(lst: List[B2Expr]) = {
-    def _mkBDD(e: B2Expr) : BDD = e match {
-      case B2And(x,y) => _mkBDD(x) andWith _mkBDD(y)
-      case B2Or(x,y) => _mkBDD(x) orWith _mkBDD(y)
-      case B2Implies(x,y) => _mkBDD(x) impWith _mkBDD(y)
-      case B2Not(x) =>
+  def mkBDDWithConjunctions(lst: List[BExpr]) = {
+    def _mkBDD(e: BExpr) : BDD = e match {
+      case BAnd(x,y) => _mkBDD(x) andWith _mkBDD(y)
+      case BOr(x,y) => _mkBDD(x) orWith _mkBDD(y)
+      case BImplies(x,y) => _mkBDD(x) impWith _mkBDD(y)
+      case BNot(x) =>
         val temp = _mkBDD(x)
         BDDBuilder.begin0(temp.not)(temp.free)
-      case B2Id(x) => factory ithVar idMap(x)
-      case B2True  => factory one
-      case B2False => factory zero
+      case BId(x) => factory ithVar idMap(x)
+      case BTrue  => factory one
+      case BFalse => factory zero
       case _ => error("This case should never occur.")
     }
     (one /: lst.map(_mkBDD)){_ andWith _}

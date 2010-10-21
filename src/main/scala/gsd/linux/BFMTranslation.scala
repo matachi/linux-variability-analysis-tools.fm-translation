@@ -21,13 +21,13 @@
 package gsd.linux
 
 import FMTranslationUtil._
-import B2Expr._
+import BExpr._
 
 import TypeFilterList._
 
 object BFMTranslation {
 
-  private type T = B2Expr
+  private type T = BExpr
 
   /**
    * The algorithm uses two maps for constructing the hierarchy:
@@ -99,36 +99,36 @@ object BFMTranslation {
     FM(root)
   }
 
-  def toBExpr(in: KExpr): B2Expr = {
-      def t(e: KExpr): B2Expr = e match {
-      case No => B2False
-      case Mod | Yes => B2True
+  def toBExpr(in: KExpr): BExpr = {
+      def t(e: KExpr): BExpr = e match {
+      case No => BFalse
+      case Mod | Yes => BTrue
 
-      case Literal(_) | KHex(_) | KInt(_) => B2False
+      case Literal(_) | KHex(_) | KInt(_) => BFalse
 
-      case Eq(Id(n), Yes) => B2Id(n)
-      case Eq(Id(n), Mod) => B2Id(n)
-      case Eq(Id(n), No) => !B2Id(n)
-      case Eq(Id(n), Literal("")) => !B2Id(n)
-      case Eq(Id(n), Literal(_)) => B2Id(n)
-      case Eq(Id(n), KHex(_)) => B2Id(n)
-      case Eq(Id(n), KInt(_)) => B2Id(n)
-      case Eq(Id(x), Id(y)) => B2Id(x) iff B2Id(y)
+      case Eq(Id(n), Yes) => BId(n)
+      case Eq(Id(n), Mod) => BId(n)
+      case Eq(Id(n), No) => !BId(n)
+      case Eq(Id(n), Literal("")) => !BId(n)
+      case Eq(Id(n), Literal(_)) => BId(n)
+      case Eq(Id(n), KHex(_)) => BId(n)
+      case Eq(Id(n), KInt(_)) => BId(n)
+      case Eq(Id(x), Id(y)) => BId(x) iff BId(y)
 
-      case NEq(Id(n), Yes) => B2True //Can be M or N -- translates to T or F
-      case NEq(Id(n), Mod) => B2True //Can be M or N -- translates to T or F
-      case NEq(Id(n), No) => B2Id(n)
+      case NEq(Id(n), Yes) => BTrue //Can be M or N -- translates to T or F
+      case NEq(Id(n), Mod) => BTrue //Can be M or N -- translates to T or F
+      case NEq(Id(n), No) => BId(n)
       case NEq(x, y) => !t(Eq(x, y))
 
       case And(x, y) => t(x) & t(y)
       case Or(x, y) => t(x) | t(y)
 
-      case Not(Mod) | Not(No) | Not(Yes) => B2True //translates to T or F
-      case Not(Id(n)) => !B2Id(n) //This case is OK
+      case Not(Mod) | Not(No) | Not(Yes) => BTrue //translates to T or F
+      case Not(Id(n)) => !BId(n) //This case is OK
       case Not(e) =>
         System.err.println("Unexpected Negation in Kconfig: " + e)
         !t(e)
-      case Id(n) => B2Id(n)
+      case Id(n) => BId(n)
 
       case e => error("Unexpected expression: " + e + ": " + e.getClass)
     }
@@ -172,7 +172,7 @@ object BFMTranslation {
      */
     def mkDefaultList(rest: List[Default], prev: List[Default]): List[T] = {
       val negPrev =
-        ((B2True: B2Expr) /: prev){ (x,y) => x & !toBExpr(y.cond) }
+        ((BTrue: BExpr) /: prev){ (x,y) => x & !toBExpr(y.cond) }
 
       rest match {
         case Nil => Nil
@@ -196,8 +196,8 @@ object BFMTranslation {
                      })
     val consequent = mkRevDeps(c.rev) ::: mkDefaults(c.defs)
 
-    (toBExpr(c.pro) | (B2Id(c.id) implies consequent.||)) ::
-      (antecedent map { ant => toBExpr(c.pro) | (ant implies B2Id(c.id)) })
+    (toBExpr(c.pro) | (BId(c.id) implies consequent.||)) ::
+      (antecedent map { ant => toBExpr(c.pro) | (ant implies BId(c.id)) })
   }
 
   /**

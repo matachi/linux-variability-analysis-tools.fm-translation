@@ -40,21 +40,21 @@ trait Tseitin {
   /**
    * Assumes (bi-)implications have been factored out.
    */
-  def transform(in: B2Expr): List[B2Expr] = {
-    def _tt(e: B2Expr): Pair[B2Id, List[B2Expr]] = {
-      val eId = B2Id(IdGen.next)
+  def transform(in: BExpr): List[BExpr] = {
+    def _tt(e: BExpr): Pair[BId, List[BExpr]] = {
+      val eId = BId(IdGen.next)
       e match {
-        case n: B2Id => (eId, List(!eId | n, eId | !n))
-        case B2Not(x) => {
+        case n: BId => (eId, List(!eId | n, eId | !n))
+        case BNot(x) => {
           val (xId, xExprs) = _tt(x)
           eId -> ((!eId | !xId) :: (eId | xId) :: xExprs)
         }
-        case B2And(x,y) => {
+        case BAnd(x,y) => {
           val (xId, xExprs) = _tt(x)
           val (yId, yExprs) = _tt(y)
           eId -> ((!eId | xId) :: (!eId | yId) :: (eId | !xId | !yId) :: xExprs ::: yExprs)
         }
-        case B2Or(x,y) => {
+        case BOr(x,y) => {
           val (xId, xExprs) = _tt(x)
           val (yId, yExprs) = _tt(y)
           eId -> ((eId | !xId) :: (eId | !yId) :: (!eId | xId | yId) :: xExprs ::: yExprs)

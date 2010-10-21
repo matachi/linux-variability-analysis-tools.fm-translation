@@ -27,26 +27,26 @@ object ExprUtil extends Rewriter {
   val sFixExpr =
     innermost {
       rule {
-        case B2Or(B2True, y) => B2True
-        case B2Or(x, B2True) => B2True
-        case B2Or(B2False, y) => y
-        case B2Or(x, B2False) => x
-        case B2And(B2True, y) => y
-        case B2And(x, B2True) => x
-        case B2And(B2False, y) => B2False //TODO I hope this doesn't happen
-        case B2And(x, B2False) => B2False //TODO I hope this doesn't happen
-        case B2Implies(B2False, y) => B2True
-        case B2Implies(B2True, y) => y
-        case B2Implies(x,B2False) => !x
-        case B2Implies(x,B2True) => B2True
-        case B2Not(B2Not(x)) => x
+        case BOr(BTrue, y) => BTrue
+        case BOr(x, BTrue) => BTrue
+        case BOr(BFalse, y) => y
+        case BOr(x, BFalse) => x
+        case BAnd(BTrue, y) => y
+        case BAnd(x, BTrue) => x
+        case BAnd(BFalse, y) => BFalse //TODO I hope this doesn't happen
+        case BAnd(x, BFalse) => BFalse //TODO I hope this doesn't happen
+        case BImplies(BFalse, y) => BTrue
+        case BImplies(BTrue, y) => y
+        case BImplies(x,BFalse) => !x
+        case BImplies(x,BTrue) => BTrue
+        case BNot(BNot(x)) => x
       }
     }
 
-  def removeTrue(lst: List[B2Expr]): List[B2Expr] =
-    lst remove { _ == B2True }
+  def removeTrue(lst: List[BExpr]): List[BExpr] =
+    lst remove { _ == BTrue }
 
-  def rewriteExpr(lst: List[B2Expr]): List[B2Expr] =
+  def rewriteExpr(lst: List[BExpr]): List[BExpr] =
     rewrite(sFixExpr)(lst)
   
 }
