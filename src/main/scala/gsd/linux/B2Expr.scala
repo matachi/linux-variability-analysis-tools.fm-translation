@@ -44,21 +44,61 @@ sealed abstract class B2Expr extends Expr {
     case B2And(x,y) => x.splitConjunctions ::: y.splitConjunctions
     case e => List(e)
   }
+
+  lazy val simplify: B2Expr = this
 }
+
+trait BinarySimplify extends B2Expr {
+  val l, r: B2Expr
+  def simp(f: (B2Expr, B2Expr) => B2Expr) = f(l.simplify, r.simplify)
+}
+
 case class B2Not(e: B2Expr) extends B2Expr {
+
   override def toString = "!" + e
+
+  override lazy val simplify = e match {
+    case B2Not(f) => f.simplify
+    case B2True => B2False
+    case B2False => B2True
+    case _ => B2Not(e.simplify)
+  }
 }
-case class B2And(l: B2Expr, r: B2Expr) extends B2Expr {
+
+case class B2And(l: B2Expr, r: B2Expr) extends B2Expr with BinarySimplify {
+
   override def toString = "(" + l + " & " + r + ")"
+
+  override lazy val simplify =
+    if (l == B2False || r == B2False) B2False
+    else simp(B2And)
 }
-case class B2Or(l: B2Expr, r: B2Expr) extends B2Expr {
+
+case class B2Or(l: B2Expr, r: B2Expr) extends B2Expr with BinarySimplify {
+
   override def toString = "(" + l + " | " + r + ")"
+
+  override lazy val simplify =
+    if (l == B2True || r == B2True) B2True
+    else simp(B2Or)
+
 }
-case class B2Iff(l: B2Expr, r: B2Expr) extends B2Expr {
+
+case class B2Iff(l: B2Expr, r: B2Expr) extends B2Expr with BinarySimplify {
   override def toString = "(" + l + " <=> " + r + ")"
+
+  override lazy val simplify = (l.simplify, r.simplify) match {
+    case (B2True, _) => r.simplify
+    case (_, B2True) => l.simplify
+    case (B2False,_) => ((!r).simplify)
+    case (_,B2False) => ((!l).simplify)
+    case _ => simp(B2Iff)
+  }
 }
-case class B2Implies(l: B2Expr, r: B2Expr) extends B2Expr {
+
+case class B2Implies(l: B2Expr, r: B2Expr) extends B2Expr with BinarySimplify {
   override def toString = "(" + l + " -> " + r + ")"
+  override lazy val simplify = simp(B2Implies)
 }
 
 case class B2Id(v: String) extends B2Expr {

@@ -19,7 +19,7 @@ object TExpr {
       case NEq(l, r) => !(t(l) teq t(r))
       case Not(e) => !t(e)
 
-      case Literal(_) | KHex(_) | KInt(_) => TNo //TODO
+      case Literal(_) | KHex(_) | KInt(_) => error("Not handled yet!!!")
 
       case e => error("Unexpected expression (is it a boolean op?): " + e + ": " + e.getClass)
     }
@@ -128,14 +128,18 @@ object TFMTranslation {
     case AConfig(id, t, inh, pro, defs, rev, ranges) =>
       val rds = ((TNo: TExpr)/: rev){ _ | toTExpr(_) }
 
+      println("Reverse Dependency: " + rds)
+
       def t(rest: List[Default], prev: List[Default]): List[B2Expr] =
         rest match {
           case Nil => Nil
           
           case (h@Default(e,cond))::tail =>
-            val ante = ((B2True: B2Expr) /: prev){ (x,y) =>
-              x & (toTExpr(y.cond) eq TNo) } & (toTExpr(cond) > TNo)
+            val ante = ((toTExpr(pro) eq TNo) /: prev){ (x,y) =>
+              x & (toTExpr(y.cond) eq TNo)
+            } & (toTExpr(cond) > TNo)
 
+            //problem is here: toTExpr(e)
             (ante implies (TId(id) eq (toTExpr(e) | rds))) :: t(tail, h::prev)
         }
 
