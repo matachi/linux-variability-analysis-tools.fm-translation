@@ -13,7 +13,20 @@ object CNF {
 
 }
 
-trait CNFRewriter extends Rewriter {
+/**
+ * FIXME temporarily here
+ */
+class IdMap extends collection.mutable.HashMap[String, Int] {
+  def +=(e: BExpr) {
+    e.identifiers filter { !contains(_) } foreach { id =>
+      this += id -> this.size
+    }
+  }
+}
+
+object CNFBuilder extends Rewriter {
+
+  import CNF._
 
   val sDistributeRule: Strategy = innermost {
     rule {
@@ -22,28 +35,34 @@ trait CNFRewriter extends Rewriter {
     }
   }
 
-  def distribute(e: BExpr): List[BExpr] =
-    rewrite(sDistributeRule)(e).splitConjunctions
+  val sIffRule = everywheretd {
+    rule {
+      case BIff(x,y) => (!x | y) & (!y | x)
+    }
+  }
+
+  val sImpliesRule = everywheretd {
+    rule {
+      case BImplies(x,y) => !x | y
+    }
+  }
+
+  def distribute(e: BExpr): BExpr =
+    rewrite(sDistributeRule)(e)
+
+  def toClause(e: BExpr, idMap: collection.Map[String, Int]): Clause = e match {
+    case BNot(BId(v)) => List(-idMap(v))
+    case BId(v) => List(idMap(v))
+    case BOr(x, y) => toClause(x, idMap) ::: toClause(y, idMap)
+    case _ => error("Wrong format. Expression is not a clause!")
+  }
+
+  def toCNF(e: BExpr, idMap: collection.Map[String, Int]) =
+    rewrite(sIffRule <* sImpliesRule)(e)
+        .simplify
+        .splitConjunctions
+        .flatMap { distribute(_).splitConjunctions }
+        .map { toClause(_, idMap) }
 
 }
 
-trait CNFBuilder {
-
-  val idMap: Map[String, Int]
-
-  /**
-   * Assumes expression has been simplified.
-   *   - Nested negations don't exist.
-   *   - been distributed
-   */
-//  def toCNF(in: BExpr): CNF = {
-//    def t(e: BExpr): CNF = e match {
-//      case BId(v) => List(idMap(v))
-//      case BNot(BId(v)) => List(-idMap(v))
-//      case BOr(x,y) => t(x) ::: t(y)
-//      case BAnd(x,y) => -idMap(v) :: t(y)
-//    }
-//
-//  }
-
-}

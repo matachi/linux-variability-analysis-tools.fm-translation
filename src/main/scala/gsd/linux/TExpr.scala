@@ -120,9 +120,10 @@ class TFMTranslation {
   import TExpr._
 
   object IdGen {
+    val prefix = "_X"
     var i = 0
-    def next = { i+=1; "_X" + i }
-    def allIds = (1 to i).map { "_X" + _ }.toList
+    def next = { i+=1; prefix + i }
+    def allIds = (1 to i).map { prefix + _ }.toList
   }
 
   /**
@@ -134,7 +135,6 @@ class TFMTranslation {
       val rds = ((TNo: TExpr)/: rev){ _ | toTExpr(_) }
       val rdsId = if (rds == TNo) TNo else TId(IdGen.next)
 
-      println("Reverse Dependency: " + rds)
       def t(rest: List[Default], prev: List[Default]): List[BExpr] =
         rest match {
           case Nil => Nil
@@ -144,7 +144,6 @@ class TFMTranslation {
               x & (toTExpr(y.cond) eq TNo)
             } & (toTExpr(cond) > TNo)
 
-            //problem is here: toTExpr(e)
             (ante implies (TId(id) eq (toTExpr(e) | rdsId))) :: t(tail, h::prev)
         }
 

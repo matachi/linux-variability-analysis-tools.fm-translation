@@ -1,5 +1,6 @@
 package gsd.linux
 
+import cnf.{IdMap, CNFBuilder}
 import org.scalatest.junit.AssertionsForJUnit
 import org.junit.Test
 
@@ -32,7 +33,13 @@ class TFMTest extends AssertionsForJUnit {
       """
 
     val ak = parseKConfig(in).toAbstractKConfig
-    new TFMTranslation().translate(ak) map { _.simplify } foreach println
+    val trans = new TFMTranslation
+    val idMap = new IdMap
+    ((trans.translate(ak) map { _.simplify }) - BTrue) foreach { e =>
+      println(e)
+      idMap += e
+      println("CNF: " + CNFBuilder.toCNF(e, idMap))
+    }
   }
 
 }
