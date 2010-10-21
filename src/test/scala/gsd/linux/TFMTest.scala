@@ -22,7 +22,9 @@ class TFMTest extends AssertionsForJUnit {
         prompt "C" if []
         select A1 if [Z1]
       }
-      config P1 tristate
+      config P1 tristate {
+        prompt "P" if []
+      }
       config W1 tristate
       config X1 tristate
       config Y1 tristate
