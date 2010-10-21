@@ -43,10 +43,10 @@ object ExprUtil extends Rewriter {
       }
     }
 
-  def removeTrue[T <: Expr](lst: List[T]): List[T] =
+  def removeTrue(lst: List[B2Expr]): List[B2Expr] =
     lst remove { _ == B2True }
 
-  def rewriteExpr[T <: Expr](lst: List[T]): List[T] =
+  def rewriteExpr(lst: List[B2Expr]): List[B2Expr] =
     rewrite(sFixExpr)(lst)
   
 }

@@ -32,36 +32,34 @@ trait ClaferTransforms {
 //FIXME hard-coded for boolean format
 trait ClaferDocument extends B2ExprDocument {
 
-  def crossTree[T <: Expr](ctcs: List[T]) =
+  def crossTree(ctcs: List[B2Expr]) =
     if (ctcs.isEmpty) NL
-    else NL +: Block("[", "]", iterToText(ctcs map toText[T])(_ :/: _)) +: NL
+    else NL +: Block("[", "]", iterToText(ctcs map toText)(_ :/: _)) +: NL
 
-  def toText[T <: Expr](f: Node[T]): Text = f match {
+  def toText(f: Node[B2Expr]): Text = f match {
     case OFeature(name,t,ctcs,cs) =>
-      fix(name) +: "?" ::  Block("{", "}", cs map toText[T]) :: crossTree(ctcs)
+      fix(name) +: "?" ::  Block("{", "}", cs map toText) :: crossTree(ctcs)
 
     case MFeature(name,t,ctcs,cs) =>
-      fix(name) :: Block("{", "}", cs map toText[T]) :: crossTree(ctcs)
+      fix(name) :: Block("{", "}", cs map toText) :: crossTree(ctcs)
 
     case OptGroup(name, cs, ctcs) =>
-      "opt" :: fix(name) :: Block("{", "}", cs map toText[T]) :: crossTree(ctcs)
+      "opt" :: fix(name) :: Block("{", "}", cs map toText) :: crossTree(ctcs)
 
     case OrGroup(name, cs, ctcs) =>
-      "or" :: fix(name) :: Block("{", "}", cs map toText[T]) :: crossTree(ctcs)
+      "or" :: fix(name) :: Block("{", "}", cs map toText) :: crossTree(ctcs)
 
     case XorGroup(name, cs, ctcs) =>
-      "xor" :: fix(name) :: Block("{", "}", cs map toText[T]) :: crossTree(ctcs)
+      "xor" :: fix(name) :: Block("{", "}", cs map toText) :: crossTree(ctcs)
 
     case MutexGroup(name, cs, ctcs) =>
-      "mux" :: fix(name) :: Block("{", "}", cs map toText[T]) :: crossTree(ctcs)
+      "mux" :: fix(name) :: Block("{", "}", cs map toText) :: crossTree(ctcs)
   }
 
-  def toText[T <: Expr](e: T): Text = e match {
-    case b: B2Expr => toExprText(b)
-  }
+  def toText(e: B2Expr): Text = toExprText(e)
 
-  implicit def toText[T <: Expr](fm: FM[T]): Text =
-    toText[T](fm.root)
+  implicit def toText(fm: FM[B2Expr]): Text =
+    toText(fm.root)
 
 }
 
@@ -69,8 +67,7 @@ trait B2ExprDocument extends ClaferTransforms {
 
   def toExprText(e: B2Expr): Text = {
     def _paren(e: B2Expr): Text =
-      if (e.isTerminal || e.getClass == this.getClass) toExprText(e) //FIXME a better way of determining bracket nesting
-      else "(" +: toExprText(e) +: ")"
+      "(" +: toExprText(e) +: ")"
 
     e match {
       case B2True => "1"  //FIXME Clafer doesn't have true

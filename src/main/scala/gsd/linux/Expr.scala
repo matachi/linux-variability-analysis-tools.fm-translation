@@ -20,12 +20,7 @@
 
 package gsd.linux
 
-trait Expr {
-  val isTerminal: Boolean = false
-}
-trait Terminal extends Expr {
-  override val isTerminal: Boolean = true
-}
+trait Expr
 
 /**
  * TODO eventually transition old BExpr to this class
@@ -50,19 +45,32 @@ sealed abstract class B2Expr extends Expr {
     case e => List(e)
   }
 }
-case class B2Not(e: B2Expr) extends B2Expr with Terminal
-case class B2And(l: B2Expr, r: B2Expr) extends B2Expr
-case class B2Or(l: B2Expr, r: B2Expr) extends B2Expr
-case class B2Iff(l: B2Expr, r: B2Expr) extends B2Expr
-case class B2Implies(l: B2Expr, r: B2Expr) extends B2Expr
-
-case class B2Id(v: String) extends B2Expr with Terminal
-
-case object B2True extends B2Expr with Terminal {
-  override def &(o: B2Expr) = o
+case class B2Not(e: B2Expr) extends B2Expr {
+  override def toString = "!" + e
 }
-case object B2False extends B2Expr with Terminal {
+case class B2And(l: B2Expr, r: B2Expr) extends B2Expr {
+  override def toString = "(" + l + " & " + r + ")"
+}
+case class B2Or(l: B2Expr, r: B2Expr) extends B2Expr {
+  override def toString = "(" + l + " | " + r + ")"
+}
+case class B2Iff(l: B2Expr, r: B2Expr) extends B2Expr {
+  override def toString = "(" + l + " <=> " + r + ")"
+}
+case class B2Implies(l: B2Expr, r: B2Expr) extends B2Expr {
+  override def toString = "(" + l + " -> " + r + ")"
+}
+
+case class B2Id(v: String) extends B2Expr {
+  override def toString = v
+}
+case object B2True extends B2Expr {
+  override def &(o: B2Expr) = o
+  override def toString = "1"
+}
+case object B2False extends B2Expr {
   override def |(o: B2Expr) = o
+  override def toString = "0"
 }
 
 

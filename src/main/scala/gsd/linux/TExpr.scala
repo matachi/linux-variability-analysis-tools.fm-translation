@@ -120,26 +120,29 @@ object TFMTranslation {
 
   import TExpr._
 
-  def revdeps(rev: List[KExpr]): TExpr =
-    ((TNo: TExpr)/: rev){ _ | toTExpr(_) }
-
-  def defaults(id: String, pro: KExpr, defs: List[Default]): List[B2Expr] =
-    defs match {
-      case Nil => List(B2True)
-      case Default(iv, cond)::tail =>
-        (((toTExpr(pro) eq TNo) & (toTExpr(cond) > TNo)) implies
-            (TId(id) eq toTExpr(iv))) :: defaults(id, pro, tail)
-    }
-    
-
   /**
-   * FIXME Assuming: tristate, no inherited 
+   * FIXME Assuming: tristate, no inherited, ranges.
+   * Always introducing new variable for reverse dependency expression.
    */
-  def translate(c: AConfig) = c match {
+  def translate(c: AConfig): List[B2Expr] = c match {
     case AConfig(id, t, inh, pro, defs, rev, ranges) =>
-      val rds = revdeps(rev)
-      true
+      val rds = ((TNo: TExpr)/: rev){ _ | toTExpr(_) }
 
+      def t(rest: List[Default], prev: List[Default]): List[B2Expr] =
+        rest match {
+          case Nil => Nil
+          
+          case (h@Default(e,cond))::tail =>
+            val ante = ((B2True: B2Expr) /: prev){ (x,y) =>
+              x & (toTExpr(y.cond) eq TNo) } & (toTExpr(cond) > TNo)
+
+            (ante implies (TId(id) eq (toTExpr(e) | rds))) :: t(tail, h::prev)
+        }
+
+    t(defs, Nil)
   }
+
+  def translate(k: AbstractKConfig): List[B2Expr] =
+    k.configs flatMap translate
 
 }
