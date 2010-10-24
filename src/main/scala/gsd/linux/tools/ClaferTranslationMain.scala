@@ -48,7 +48,7 @@ object ClaferTranslationMain extends ClaferDocument {
     val parentMap = Hierarchy.mkParentMap(ck)
 
     println("Loading SAT Solver...")
-    val sat = new SATBuilder(idMap)
+    val sat = new SATBuilderOld(idMap)
     sat.addCNF(cnf)
 
     println("Finding proper parents...")

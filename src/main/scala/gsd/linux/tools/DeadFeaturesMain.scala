@@ -22,7 +22,7 @@ package gsd.linux.tools
 
 import gsd.linux.CNFParser.CNFData
 import java.io.PrintStream
-import gsd.linux.{PosLit, SATBuilder, IdMapBuilder, CNFParser}
+import gsd.linux.{PosLit, SATBuilderOld, IdMapBuilder, CNFParser}
 
 object DeadFeaturesMain {
 
@@ -35,7 +35,7 @@ object DeadFeaturesMain {
     val out = if (args.size > 1) new PrintStream(args(1)) else System.out
     val CNFData(cnf, ids, gens) = CNFParser.parseCNFFile(args(0))
 
-    val sat = new SATBuilder(IdMapBuilder.mkIdMap(ids ++ gens))
+    val sat = new SATBuilderOld(IdMapBuilder.mkIdMap(ids ++ gens))
     sat.addCNF(cnf)
     ids.foreach { id =>
       if (!sat.isSatisfiable(PosLit(id))) out.println(id)

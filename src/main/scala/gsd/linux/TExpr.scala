@@ -116,7 +116,7 @@ case class TEq(left: TExpr, right: TExpr) extends TExpr {
 
 
 
-class TFMTranslation {
+class TFMTranslation(k: AbstractKConfig) {
   import TExpr._
 
   object IdGen {
@@ -125,6 +125,22 @@ class TFMTranslation {
     def next = { i+=1; prefix + i }
     def allIds = (1 to i).map { prefix + _ }.toList
   }
+
+  def identifiers: Map[String, Int] =
+    Map() ++ (((k.identifiers ::: IdGen.allIds) flatMap { id =>
+      List(id + "_1", id + "_2")
+    }).zipWithIndex map { case (id,i) => (id, i+1) })
+
+  def translate: List[BExpr] =
+    (translateNotSimplified map { _.simplify }) - BTrue
+
+  def translateNotSimplified: List[BExpr] =
+    ((k.configs flatMap translate) - BTrue) ::: {
+      // Disallow mod state from Boolean configs
+      k.configs.filter { _.ktype == KBoolType }
+               .map { _.id }
+               .map { id => BId(id + "_1") implies BId(id + "_2") } 
+    }
 
   /**
    * FIXME Assuming: tristate, no inherited, ranges.
@@ -149,8 +165,5 @@ class TFMTranslation {
 
     (rdsId eq rds) :: t(defs, Nil)
   }
-
-  def translate(k: AbstractKConfig): List[BExpr] =
-    k.configs flatMap translate
 
 }

@@ -2,6 +2,7 @@ package gsd.linux.cnf
 
 import gsd.linux._
 import kiama.rewriting.Rewriter
+import collection.mutable.HashMap
 
 /**
  * A new CNF class, will replace old one.
@@ -13,16 +14,18 @@ object CNF {
 
 }
 
-/**
- * FIXME temporarily here
- */
-class IdMap extends collection.mutable.HashMap[String, Int] {
-  def +=(e: BExpr) {
-    e.identifiers filter { !contains(_) } foreach { id =>
-      this += id -> this.size
+object IdMap {
+  def apply(es: Iterable[BExpr]): Map[String, Int] = {
+    val map = new HashMap[String, Int]
+    es foreach { e =>
+      e.identifiers filter { !map.contains(_) } foreach { id =>
+        map += id -> map.size
+      }
     }
+    Map() ++ map
   }
 }
+
 
 object CNFBuilder extends Rewriter {
 
@@ -50,6 +53,9 @@ object CNFBuilder extends Rewriter {
   def distribute(e: BExpr): BExpr =
     rewrite(sDistributeRule)(e)
 
+  /**
+   * @param idMap Maps identifiers in the expression to an integer
+   */
   def toClause(e: BExpr, idMap: collection.Map[String, Int]): Clause = e match {
     case BNot(BId(v)) => List(-idMap(v))
     case BId(v) => List(idMap(v))
@@ -57,6 +63,9 @@ object CNFBuilder extends Rewriter {
     case _ => error("Wrong format. Expression is not a clause!")
   }
 
+  /**
+   * @param idMap Maps identifiers in the expression to an integer
+   */
   def toCNF(e: BExpr, idMap: collection.Map[String, Int]) =
     rewrite(sIffRule <* sImpliesRule)(e)
         .simplify

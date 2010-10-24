@@ -35,7 +35,7 @@ object FMTranslationUtil {
     }
 
 
-  def mkProperParents(sat: SATBuilder, k: ConcreteKConfig): Hierarchy = {
+  def mkProperParents(sat: SATBuilderOld, k: ConcreteKConfig): Hierarchy = {
 
     //A map from all features to their closest ancestor that's a Config
     val configMap = Hierarchy.mkParentMap(k)

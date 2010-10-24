@@ -35,7 +35,7 @@ import IdMapBuilder._
  *
  * @author Steven She (shshe@gsd.uwaterloo.ca)
  */
-class SATBuilder(val idMap: Map[String,Int]) {
+class SATBuilderOld(val idMap: Map[String,Int]) {
 
   lazy val varMap = idMap.inverse
   val solver = newSolver
