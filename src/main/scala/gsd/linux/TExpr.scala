@@ -126,10 +126,39 @@ class TFMTranslation(k: AbstractKConfig) {
     def allIds = (1 to i).map { prefix + _ }.toList
   }
 
-  def identifiers: Map[String, Int] =
-    Map() ++ (((k.identifiers ::: IdGen.allIds) flatMap { id =>
-      List(id + "_1", id + "_2")
-    }).zipWithIndex map { case (id,i) => (id, i+1) })
+  def identifiers: List[String] =
+    k.identifiers ::: IdGen.allIds
+
+  /*
+   * Var i (odd) represents identifier x_1, Var i+1 (even) represents x_2.
+   */
+  def idMap: Map[String, Int] =
+    Map() ++ {
+      (identifiers flatMap 
+              { id => List(id + "_1", id + "_2") }).zipWithIndex map
+                     { case (id,i) => (id, i + 1) }
+    }
+
+
+  def interpret(model: Array[Int]): Array[(String, String)] = {
+    val varMap = Map() ++ (idMap map { case (id,v) => (v, id) })
+    val result = new Array[(String, String)](model.length/2)
+    for (i <- 0 until model.length by 2) {
+      val key = i + 1
+      assert(Math.abs(model(i)) == key, model(i) + " != " + key)
+      val i1 = model(i) > 0
+      val i2 = model(i+1) > 0
+      val id = varMap(key)
+      val state = (i1, i2) match {
+        case (true, true)   => "Y"
+        case (true, false)  => "M"
+        case (false, false) => "N"
+        case (false, true)  => error("(0,1) state should never be in a model!")
+      }
+      result(i / 2) = (id, state)
+    }
+  result
+  }
 
   def translate: List[BExpr] =
     (translateNotSimplified map { _.simplify }) - BTrue
@@ -137,9 +166,15 @@ class TFMTranslation(k: AbstractKConfig) {
   def translateNotSimplified: List[BExpr] =
     ((k.configs flatMap translate) - BTrue) ::: {
       // Disallow mod state from Boolean configs
-      k.configs.filter { _.ktype == KBoolType }
-               .map { _.id }
-               .map { id => BId(id + "_1") implies BId(id + "_2") } 
+      
+      k.configs filter
+              { _.ktype == KBoolType } map
+              { _.id } map
+              { id => BId(id + "_1") implies BId(id + "_2") }
+    } ::: {
+      // Disallow (0,1) state
+
+      identifiers map { id => BId(id + "_1") | !BId(id + "_2") }
     }
 
   /**

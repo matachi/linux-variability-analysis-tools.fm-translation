@@ -41,9 +41,12 @@ class TFMTest extends AssertionsForJUnit {
     val trans = new TFMTranslation(ak)
     val exprs = trans.translate
 
-    val sat = new SATBuilder(exprs, trans.identifiers)
+    val sat = new SATBuilder(exprs, trans.idMap)
     println(sat.isSatisfiable)
-    sat.allConfigurations map { Arrays.toString } foreach println
+    sat.allConfigurations foreach { c =>
+      println(Arrays.toString(c))
+      println(trans.interpret(c).toList )
+    }
   }
 
   @Test def allConfigurations {

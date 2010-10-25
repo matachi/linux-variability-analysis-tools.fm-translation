@@ -46,7 +46,6 @@ class SATBuilder(cnf: CNF, size: Int) {
   addCNF(cnf, size)
 
   def addCNF(cnf: CNF, size: Int) = {
-    println("adding cnf size: " + size)
     solver.newVar(size)
 
     //FIXME workaround for free variables not appearing in models
