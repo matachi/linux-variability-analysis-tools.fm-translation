@@ -42,11 +42,34 @@ class TFMTest extends AssertionsForJUnit {
     val exprs = trans.translate
 
     val sat = new SATBuilder(exprs, trans.idMap)
-    println(sat.isSatisfiable)
     sat.allConfigurations foreach { c =>
-      println(Arrays.toString(c))
       println(trans.interpret(c).toList )
     }
+  }
+
+  /**
+   * A1 should be lower bounded by B1.
+   */
+  @Test def select {
+    val in = """
+      config A1 tristate {
+        prompt "A" if []
+      }
+      config B1 tristate {
+        prompt "B" if []
+        select A1 if []
+      }
+      """
+
+    val ak = parseKConfig(in).toAbstractKConfig
+    val trans = new TFMTranslation(ak)
+    val exprs = trans.translate
+    
+    val sat = new SATBuilder(exprs, trans.idMap)
+    sat.allConfigurations foreach { c =>
+      println(trans.interpret(c).toList )
+    }
+
   }
 
   @Test def allConfigurations {

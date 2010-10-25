@@ -50,14 +50,18 @@ abstract class TExpr {
   /**
    * Returns a single boolean expression.
    */
-  def <=(other: TExpr): BExpr = other match {
-    case TYes => (this eq TYes) | (this eq TMod) | (this eq TNo)
-    case TMod => (this eq TMod) | (this eq TNo)
-    case TNo =>  (this eq TNo)
+  def <=(other: TExpr): BExpr = (this, other) match {
+    case (TNo,_)  => BTrue
+    case (TMod,_) => (other eq TMod) | (other eq TYes)
+    case (TYes,_) => other eq TYes
+
+    case (_,TYes) => BTrue
+    case (_,TMod) => (this eq TMod) | (this eq TNo)
+    case (_,TNo)  => this eq TNo
 
     case _ =>
       (toBExpr, other.toBExpr) match {
-        case ((l1, l2), (r1, r2)) => ((l1 | l2 ) implies (r1 | r2)) & (l1 & l2 & r1 & !r2)
+        case ((l1, l2), (r1, r2)) => ((l1 | l2 ) implies (r1 | r2)) & !(l1 & l2 & r1 & !r2)
       }
   }
 
@@ -134,7 +138,7 @@ class TFMTranslation(k: AbstractKConfig) {
    */
   def idMap: Map[String, Int] =
     Map() ++ {
-      (identifiers flatMap 
+      (identifiers flatMap
               { id => List(id + "_1", id + "_2") }).zipWithIndex map
                      { case (id,i) => (id, i + 1) }
     }
@@ -142,13 +146,15 @@ class TFMTranslation(k: AbstractKConfig) {
 
   def interpret(model: Array[Int]): Array[(String, String)] = {
     val varMap = Map() ++ (idMap map { case (id,v) => (v, id) })
-    val result = new Array[(String, String)](model.length/2)
-    for (i <- 0 until model.length by 2) {
+    val result = new Array[(String, String)](model.size / 2)
+
+    // Iterate only through identifiers in the Kconfig (ignoring generated)
+    for (i <- 0 until model.size by 2) {
       val key = i + 1
       assert(Math.abs(model(i)) == key, model(i) + " != " + key)
       val i1 = model(i) > 0
       val i2 = model(i+1) > 0
-      val id = varMap(key)
+      val id = varMap(key).slice(0, varMap(key).length - 2) //FIXME drop _1 suffix
       val state = (i1, i2) match {
         case (true, true)   => "Y"
         case (true, false)  => "M"
@@ -160,6 +166,9 @@ class TFMTranslation(k: AbstractKConfig) {
   result
   }
 
+  /**
+   * Stateful: Changes identifiers in IdGen
+   */
   def translate: List[BExpr] =
     (translateNotSimplified map { _.simplify }) - BTrue
 
@@ -173,8 +182,9 @@ class TFMTranslation(k: AbstractKConfig) {
               { id => BId(id + "_1") implies BId(id + "_2") }
     } ::: {
       // Disallow (0,1) state
-
-      identifiers map { id => BId(id + "_1") | !BId(id + "_2") }
+      // Ignore generated identifiers because they have equivalence
+      
+      k.identifiers map { id => BId(id + "_1") | !BId(id + "_2") }
     }
 
   /**
@@ -183,7 +193,7 @@ class TFMTranslation(k: AbstractKConfig) {
    */
   def translate(c: AConfig): List[BExpr] = c match {
     case AConfig(id, t, inh, pro, defs, rev, ranges) =>
-      val rds = ((TNo: TExpr)/: rev){ _ | toTExpr(_) }
+      val rds = ((TNo: TExpr) /: rev){ _ | toTExpr(_) }
       val rdsId = if (rds == TNo) TNo else TId(IdGen.next)
 
       def t(rest: List[Default], prev: List[Default]): List[BExpr] =
@@ -198,7 +208,7 @@ class TFMTranslation(k: AbstractKConfig) {
             (ante implies (TId(id) eq (toTExpr(e) | rdsId))) :: t(tail, h::prev)
         }
 
-    (rdsId eq rds) :: t(defs, Nil)
+    (rdsId eq rds) :: (rdsId <= TId(id)) :: t(defs, Nil)
   }
 
 }
