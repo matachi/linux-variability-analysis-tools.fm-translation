@@ -1,13 +1,8 @@
 package gsd.linux
 
-import cnf.{SATBuilder, IdMap, CNFBuilder}
+import cnf.SATBuilder
 import org.scalatest.junit.AssertionsForJUnit
 import org.junit.Test
-import org.sat4j.specs.ISolver
-import org.sat4j.minisat.SolverFactory
-import org.sat4j.tools.ModelIterator
-import org.sat4j.core.VecInt
-import java.util.Arrays
 
 class TFMTest extends AssertionsForJUnit {
 
@@ -31,10 +26,10 @@ class TFMTest extends AssertionsForJUnit {
       config P1 tristate {
         prompt "P" if []
       }
-      config W1 tristate
-      config X1 tristate
-      config Y1 tristate
-      config Z1 tristate
+      config W1 tristate { prompt "..." if [] }
+      config X1 tristate { prompt "..." if [] }
+      config Y1 tristate { prompt "..." if [] }
+      config Z1 tristate { prompt "..." if [] }
       """
 
     val ak = parseKConfig(in).toAbstractKConfig
@@ -63,13 +58,35 @@ class TFMTest extends AssertionsForJUnit {
 
     val ak = parseKConfig(in).toAbstractKConfig
     val trans = new TFMTranslation(ak)
-    val exprs = trans.translate
+    val sat = new SATBuilder(trans.translate, trans.idMap)
     
-    val sat = new SATBuilder(exprs, trans.idMap)
-    sat.allConfigurations foreach { c =>
-      println(trans.interpret(c).toList )
-    }
+    assert(List(
+        List(("A1", "N"), ("B1", "N")),
+        List(("A1", "M"), ("B1", "N")),
+        List(("A1", "Y"), ("B1", "N")),
+        List(("A1", "M"), ("B1", "M")),
+        List(("A1", "Y"), ("B1", "M")),
+        List(("A1", "Y"), ("B1", "Y"))) === (sat.allConfigurations map trans.interpret))
+  }
 
+  @Test def defaultQuirkDerivedConfig {
+    val in = """
+      config A1 tristate {
+        default [y] if [B1]
+      }
+      config B1 tristate {
+        prompt "B" if []
+      }
+      """
+
+    val ak = parseKConfig(in).toAbstractKConfig
+    val trans = new TFMTranslation(ak)
+    val exprs = trans.translate
+    val sat = new SATBuilder(exprs, trans.idMap)
+    assert(List(
+        List(("A1","N"), ("B1", "N")),
+        List(("A1","M"), ("B1", "M")),
+        List(("A1","Y"), ("B1", "Y"))) === (sat.allConfigurations map trans.interpret))
   }
 
   @Test def allConfigurations {
@@ -106,6 +123,12 @@ class TFMTest extends AssertionsForJUnit {
     val trans = new TFMTranslation(ak)
     val sat = new SATBuilder(trans.translate, ak.idMap) //FIXME idMap
     assert(sat.allConfigurations.size == 2)
+  }
+
+  @Test def simplify {
+    implicit def toBExpr(id: String) = BId(id)
+    assert((BId("B") | BFalse).simplify === BId("B"))
+    assert(("A" iff (BId("B") | BFalse)).simplify === ("A" iff "B"))
   }
 
 }

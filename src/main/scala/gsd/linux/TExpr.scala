@@ -1,5 +1,7 @@
 package gsd.linux
 
+import collection.mutable.ListBuffer
+
 object TExpr {
 
   /**
@@ -119,7 +121,6 @@ case class TEq(left: TExpr, right: TExpr) extends TExpr {
 
 
 
-
 class TFMTranslation(k: AbstractKConfig) {
   import TExpr._
 
@@ -144,13 +145,14 @@ class TFMTranslation(k: AbstractKConfig) {
     }
 
 
-  def interpret(model: Array[Int]): Array[(String, String)] = {
+  def interpret(model: Array[Int]): List[(String, String)] = {
     val varMap = Map() ++ (idMap map { case (id,v) => (v, id) })
-    val result = new Array[(String, String)](model.size / 2)
+    val result = new ListBuffer[(String, String)]
 
     // Iterate only through identifiers in the Kconfig (ignoring generated)
-    for (i <- 0 until model.size by 2) {
+    for (i <- 0 until (k.identifiers.size * 2) by 2) {
       val key = i + 1
+
       assert(Math.abs(model(i)) == key, model(i) + " != " + key)
       val i1 = model(i) > 0
       val i2 = model(i+1) > 0
@@ -161,9 +163,10 @@ class TFMTranslation(k: AbstractKConfig) {
         case (false, false) => "N"
         case (false, true)  => error("(0,1) state should never be in a model!")
       }
-      result(i / 2) = (id, state)
+      result += (id, state)
     }
-  result
+    
+  result.toList
   }
 
   /**
@@ -199,13 +202,16 @@ class TFMTranslation(k: AbstractKConfig) {
       def t(rest: List[Default], prev: List[Default]): List[BExpr] =
         rest match {
           case Nil => Nil
-          
+
           case (h@Default(e,cond))::tail =>
             val ante = ((toTExpr(pro) eq TNo) /: prev){ (x,y) =>
               x & (toTExpr(y.cond) eq TNo)
             } & (toTExpr(cond) > TNo)
 
-            (ante implies (TId(id) eq (toTExpr(e) | rdsId))) :: t(tail, h::prev)
+            // Handle default y quirk
+            val tex = if (e == Yes) toTExpr(cond) else toTExpr(e)
+
+            (ante implies (TId(id) eq (tex | rdsId))) :: t(tail, h::prev)
         }
 
     (rdsId eq rds) :: (rdsId <= TId(id)) :: t(defs, Nil)
