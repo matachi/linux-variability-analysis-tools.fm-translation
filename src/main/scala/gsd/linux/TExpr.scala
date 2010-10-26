@@ -145,9 +145,9 @@ class TFMTranslation(k: AbstractKConfig) {
     }
 
 
-  def interpret(model: Array[Int]): List[(String, String)] = {
+  def interpret(model: Array[Int]): List[(String, Int)] = {
     val varMap = Map() ++ (idMap map { case (id,v) => (v, id) })
-    val result = new ListBuffer[(String, String)]
+    val result = new ListBuffer[(String, Int)]
 
     // Iterate only through identifiers in the Kconfig (ignoring generated)
     for (i <- 0 until (k.identifiers.size * 2) by 2) {
@@ -158,9 +158,9 @@ class TFMTranslation(k: AbstractKConfig) {
       val i2 = model(i+1) > 0
       val id = varMap(key).slice(0, varMap(key).length - 2) //FIXME drop _1 suffix
       val state = (i1, i2) match {
-        case (true, true)   => "Y"
-        case (true, false)  => "M"
-        case (false, false) => "N"
+        case (true, true)   => 2
+        case (true, false)  => 1
+        case (false, false) => 0 
         case (false, true)  => error("(0,1) state should never be in a model!")
       }
       result += (id, state)
@@ -191,7 +191,7 @@ class TFMTranslation(k: AbstractKConfig) {
     }
 
   /**
-   * FIXME Assuming: tristate, no inherited, ranges.
+   * FIXME no ranges.
    * Always introducing new variable for reverse dependency expression.
    */
   def translate(c: AConfig): List[BExpr] = c match {
@@ -214,7 +214,10 @@ class TFMTranslation(k: AbstractKConfig) {
             (ante implies (TId(id) eq (tex | rdsId))) :: t(tail, h::prev)
         }
 
-    (rdsId eq rds) :: (rdsId <= TId(id)) :: t(defs, Nil)
+    (rdsId eq rds) :: // reverse dependency equivalence
+            (rdsId <= TId(id)) ::  // reverse dependency lower bound
+            (TId(id) <= toTExpr(inh)) ::  // inherited upper bound
+            t(defs, Nil)
   }
 
 }
