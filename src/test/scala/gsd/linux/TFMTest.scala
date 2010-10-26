@@ -8,7 +8,33 @@ class TFMTest extends AssertionsForJUnit {
 
   import KConfigParser._
 
-  @Test def everythingKconfig {
+  def allConfigs(in: String): List[List[(String,String)]] = {
+    val ak = parseKConfig(in).toAbstractKConfig
+    val trans = new TFMTranslation(ak)
+    val exprs = trans.translate
+    val sat = new SATBuilder(exprs, trans.idMap)
+    sat.allConfigurations map trans.interpret
+  }
+
+  implicit def toConfigList(lst: List[List[(String,String)]]) = new {
+    def filterByConfig(cond: ((String,String)) => Boolean): List[List[(String,String)]] =
+      lst filter { l => l exists cond }
+
+    def configValue(id: String): List[String] =
+      lst map { l => l.find { case (c,_) => c == id }.get._2 }
+  }
+
+  @Test def single {
+    val in = """
+      config A tristate {
+        prompt "..." if []
+      }"""
+
+    assert(allConfigs(in).size === 3)
+  }
+
+
+  @Test def everything {
     val in = """
       config A1 tristate {
         prompt "A" if [P1]
@@ -31,15 +57,7 @@ class TFMTest extends AssertionsForJUnit {
       config Y1 tristate { prompt "..." if [] }
       config Z1 tristate { prompt "..." if [] }
       """
-
-    val ak = parseKConfig(in).toAbstractKConfig
-    val trans = new TFMTranslation(ak)
-    val exprs = trans.translate
-
-    val sat = new SATBuilder(exprs, trans.idMap)
-    sat.allConfigurations foreach { c =>
-      println(trans.interpret(c).toList )
-    }
+    allConfigs(in) foreach println
   }
 
   /**
@@ -56,37 +74,69 @@ class TFMTest extends AssertionsForJUnit {
       }
       """
 
-    val ak = parseKConfig(in).toAbstractKConfig
-    val trans = new TFMTranslation(ak)
-    val sat = new SATBuilder(trans.translate, trans.idMap)
-    
     assert(List(
         List(("A1", "N"), ("B1", "N")),
         List(("A1", "M"), ("B1", "N")),
         List(("A1", "Y"), ("B1", "N")),
         List(("A1", "M"), ("B1", "M")),
         List(("A1", "Y"), ("B1", "M")),
-        List(("A1", "Y"), ("B1", "Y"))) === (sat.allConfigurations map trans.interpret))
+        List(("A1", "Y"), ("B1", "Y"))) === allConfigs(in))
   }
 
-  @Test def defaultQuirkDerivedConfig {
+  @Test def defaultY {
     val in = """
       config A1 tristate {
         default [y] if [B1]
       }
-      config B1 tristate {
-        prompt "B" if []
-      }
+      config B1 tristate { prompt "B" if [] }
       """
 
-    val ak = parseKConfig(in).toAbstractKConfig
-    val trans = new TFMTranslation(ak)
-    val exprs = trans.translate
-    val sat = new SATBuilder(exprs, trans.idMap)
     assert(List(
         List(("A1","N"), ("B1", "N")),
         List(("A1","M"), ("B1", "M")),
-        List(("A1","Y"), ("B1", "Y"))) === (sat.allConfigurations map trans.interpret))
+        List(("A1","Y"), ("B1", "Y"))) === allConfigs(in))
+  }
+
+  @Test def defaultM {
+    val in = """
+      config A1 tristate {
+        default [m] if [B1]
+      }
+      config B1 tristate { prompt "B" if [] }
+      """
+
+    assert(List(
+      List(("A1","N"), ("B1", "N")),
+      List(("A1","M"), ("B1", "M")),
+      List(("A1","M"), ("B1", "Y"))) === allConfigs(in))
+  }
+
+  @Test def defaultWithPrompt {
+    val in = """
+      config A1 tristate {
+        prompt "A" if []
+        default [y] if [B1]
+      }
+      config B1 tristate { prompt "B" if [] }
+      """
+
+    assert(allConfigs(in).size === 9)
+  }
+
+  @Test def conditionalPrompt {
+    val in = """
+      config A1 tristate {
+        prompt "A" if [B1]
+      }
+      config B1 tristate { prompt "B" if [] }
+      """
+
+    // A1 can only be M or Y when B1 is M or Y
+    assert {
+        allConfigs(in) filterByConfig { t =>
+          t == ("A1", "M") || t == ("A1", "Y")
+      } configValue("B1") forall { v => v == "M" || v == "Y" }
+    }
   }
 
   @Test def allConfigurations {
@@ -111,18 +161,6 @@ class TFMTest extends AssertionsForJUnit {
     assert(sat.allConfigurations(List(2)).size === 3)
     sat.reload
     assert(sat.allConfigurations(List(3)).size === 3)
-  }
-
-  @Test def allConfigurationsKconfig {
-    val in = """
-      config A tristate {
-        prompt "..." if []
-      }"""
-
-    val ak = parseKConfig(in).toAbstractKConfig
-    val trans = new TFMTranslation(ak)
-    val sat = new SATBuilder(trans.translate, ak.idMap) //FIXME idMap
-    assert(sat.allConfigurations.size == 2)
   }
 
   @Test def simplify {
