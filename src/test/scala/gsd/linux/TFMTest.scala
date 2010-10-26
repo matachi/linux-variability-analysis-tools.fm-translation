@@ -16,15 +16,29 @@ class TFMTest extends AssertionsForJUnit {
     sat.allConfigurations map trans.interpret
   }
 
-  implicit def toConfigList(lst: List[List[(String,String)]]) = new {
-    def filterByConfig(cond: ((String,String)) => Boolean): List[List[(String,String)]] =
+  implicit def toConfigList(lst: List[List[(String,String)]]) =
+    new RichConfigList(lst)
+
+  class RichConfigList(lst: List[List[(String,String)]]) {
+    def filterConfigs(cond: ((String,String)) => Boolean): List[List[(String,String)]] =
       lst filter { l => l exists cond }
 
-    def configValue(id: String): List[String] =
-      lst map { l => l.find { case (c,_) => c == id }.get._2 }
+    def configValues(ids: String*): Set[String] =
+      Set() ++ (lst flatMap { _ filter { case (c,_) => ids contains c } map { _._2 } })
   }
 
-  @Test def single {
+
+  @Test def boolean {
+    val in = """
+      config A1 boolean {
+        prompt "A" if []
+      }
+      """
+
+    assert(allConfigs(in).size == 2)
+  }
+
+  @Test def tristate {
     val in = """
       config A tristate {
         prompt "..." if []
@@ -63,7 +77,7 @@ class TFMTest extends AssertionsForJUnit {
   /**
    * A1 should be lower bounded by B1.
    */
-  @Test def select {
+  @Test def oneSelect {
     val in = """
       config A1 tristate {
         prompt "A" if []
@@ -81,6 +95,26 @@ class TFMTest extends AssertionsForJUnit {
         List(("A1", "M"), ("B1", "M")),
         List(("A1", "Y"), ("B1", "M")),
         List(("A1", "Y"), ("B1", "Y"))) === allConfigs(in))
+  }
+
+  @Test def multipleSelectsDerived {
+    val in = """
+      config A1 tristate
+      config B1 tristate { prompt "B" if [] select A1 if [] }
+      config C1 tristate { prompt "C" if [] select A1 if [] }
+      """
+
+    allConfigs(in) foreach println
+
+    // If A is M or Y, then either B1 or C1 is M or Y
+    assert {
+      allConfigs(in) filterConfigs
+            { t => t == ("A1", "M") || t == ("A1", "Y") } forall
+            { c => c exists { t => t == ("B1", "M") ||
+                    t == ("C1", "M") ||
+                    t == ("B1", "Y") ||
+                    t == ("C1", "Y") }}
+    }
   }
 
   @Test def defaultY {
@@ -133,10 +167,29 @@ class TFMTest extends AssertionsForJUnit {
 
     // A1 can only be M or Y when B1 is M or Y
     assert {
-        allConfigs(in) filterByConfig { t =>
+        allConfigs(in) filterConfigs { t =>
           t == ("A1", "M") || t == ("A1", "Y")
-      } configValue("B1") forall { v => v == "M" || v == "Y" }
+      } configValues("B1") forall { v => v == "M" || v == "Y" }
     }
+  }
+
+  @Test def conditionalDerived {
+    val in = """
+      config A1 tristate {
+        prompt "A" if [B1]
+        default [m] if []
+      }
+      config B1 tristate { prompt "B" if [] }
+      """
+
+    allConfigs(in) foreach println
+
+    //When B1 is N, A1 must be M
+    expect(Set("M")) {
+      allConfigs(in) filterConfigs { _ == ("B1", "N") } configValues("A1")
+    }
+    
+    expect(7)(allConfigs(in).size)
   }
 
   @Test def allConfigurations {
