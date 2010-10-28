@@ -1,8 +1,9 @@
 package gsd.linux
 
 import collection.mutable.ListBuffer
+import util.logging.Logged
 
-object TExpr {
+object TExpr extends Logged {
 
   /**
    * Limited functionality, used to convert reverse dependency expression.
@@ -21,7 +22,9 @@ object TExpr {
       case NEq(l, r) => !(t(l) teq t(r))
       case Not(e) => !t(e)
 
-      case Literal(_) | KHex(_) | KInt(_) => error("Not handled yet!!!")
+      case Literal(_) | KHex(_) | KInt(_) =>
+        log("WARN: Literal / Hex / Int not handled, returning TYes")
+        TYes
 
       case e => error("Unexpected expression (is it a boolean op?): " + e + ": " + e.getClass)
     }
@@ -131,15 +134,15 @@ class TFMTranslation(k: AbstractKConfig) {
     def allIds = (1 to i).map { prefix + _ }.toList
   }
 
-  def identifiers: List[String] =
-    k.identifiers ::: IdGen.allIds
+  def identifiers: Set[String] =
+    Set() ++ k.identifiers ++ IdGen.allIds
 
   /*
    * Var i (odd) represents identifier x_1, Var i+1 (even) represents x_2.
    */
   def idMap: Map[String, Int] =
     Map() ++ {
-      (identifiers flatMap
+      (identifiers.toList flatMap
               { id => List(id + "_1", id + "_2") }).zipWithIndex map
                      { case (id,i) => (id, i + 1) }
     }
@@ -172,10 +175,10 @@ class TFMTranslation(k: AbstractKConfig) {
   /**
    * Stateful: Changes identifiers in IdGen
    */
-  def translate: List[BExpr] =
+  lazy val translate: List[BExpr] =
     (translateNotSimplified map { _.simplify }) - BTrue
 
-  def translateNotSimplified: List[BExpr] =
+  lazy val translateNotSimplified: List[BExpr] =
     ((k.configs flatMap translate) - BTrue) ::: {
       // Disallow mod state from Boolean configs
       
@@ -187,7 +190,7 @@ class TFMTranslation(k: AbstractKConfig) {
       // Disallow (0,1) state
       // Ignore generated identifiers because they have equivalence
       
-      k.identifiers map { id => BId(id + "_1") | !BId(id + "_2") }
+      k.identifiers.toList map { id => BId(id + "_1") | !BId(id + "_2") }
     }
 
   /**

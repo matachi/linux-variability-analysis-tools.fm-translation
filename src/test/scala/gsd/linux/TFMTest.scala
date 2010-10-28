@@ -3,19 +3,18 @@ package gsd.linux
 import cnf.SATBuilder
 import org.scalatest.junit.AssertionsForJUnit
 import org.junit.Test
+import util.logging.ConsoleLogger
 
 class TFMTest extends AssertionsForJUnit {
 
-  import KConfigParser._
-
   def allConfigs(in: String): List[List[(String,Int)]] = {
-    val ak = parseKConfig(in).toAbstractKConfig
+    val ak = KConfigParser.parseKConfig(in).toAbstractKConfig
     val trans = new TFMTranslation(ak)
     val exprs = trans.translate
     val sat = new SATBuilder(exprs, trans.idMap)
     sat.allConfigurations map trans.interpret
   }
-  
+
   implicit def toRichConfig(lst: List[(String, Int)]) =
     new RichConfig(lst)
 
@@ -35,7 +34,6 @@ class TFMTest extends AssertionsForJUnit {
     def valuesOf(s: String): Set[Int] =
       Set() ++ (lst map { _ valueOf s })
   }
-
 
   @Test def boolean {
     val in = """
@@ -252,3 +250,34 @@ class TFMTest extends AssertionsForJUnit {
   }
 
 }
+
+
+class LinuxTest extends AssertionsForJUnit {
+
+  import KConfigParser._
+
+  /**
+   * FIXME
+   * Needs a big stack size because I used kiama to retrieve all identifiers
+   * in AbstractKConfig. 
+   */
+  @Test def linux {
+    println("Parsing Kconfig...")
+    val ck = parseKConfigFile("input/2.6.28.6.exconfig")
+
+    println("Converting to abstract syntax...")
+    val ak = ck.toAbstractKConfig
+
+    println("Translating to tristate...")
+    val trans = new TFMTranslation(ak) with ConsoleLogger
+    val exprs = trans.translate
+
+    println("Converting to CNF...")
+    val sat = new SATBuilder(exprs, trans.idMap)
+    
+    println("Running SAT...")
+    println("Is SAT? " + sat.isSatisfiable)
+  }
+
+}
+
