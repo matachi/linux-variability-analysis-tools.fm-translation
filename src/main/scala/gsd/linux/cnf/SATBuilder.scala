@@ -29,6 +29,7 @@ import collection.mutable.ListBuffer
 import gsd.linux.BExpr
 import org.sat4j.reader.InstanceReader
 import java.util.Arrays
+import util.logging.Logged
 
 /**
  * WARNING: The SAT solver has its own internal state, be careful about
@@ -36,7 +37,7 @@ import java.util.Arrays
  *
  * @author Steven She (shshe@gsd.uwaterloo.ca)
  */
-class SATBuilder(cnf: CNF, size: Int) {
+class SATBuilder(cnf: CNF, size: Int) extends Logged {
 
   def this(exprs: Iterable[BExpr], idMap: Map[String, Int]) =
     this(exprs flatMap { CNFBuilder.toCNF(_, idMap) }, idMap.size)
@@ -46,6 +47,7 @@ class SATBuilder(cnf: CNF, size: Int) {
   addCNF(cnf, size)
 
   def addCNF(cnf: CNF, size: Int) = {
+    log("# of Vars: " + size)
     solver.newVar(size)
 
     //FIXME workaround for free variables not appearing in models

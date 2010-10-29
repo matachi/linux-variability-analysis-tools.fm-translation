@@ -3,8 +3,6 @@ package gsd.linux.cnf
 import gsd.linux._
 import kiama.rewriting.Rewriter
 import collection.mutable.HashMap
-import util.logging.Logged
-import actors.{TIMEOUT, Actor}
 
 /**
  * A new CNF class, will replace old one.
@@ -32,86 +30,12 @@ object IdMap {
 object CNFBuilder extends Rewriter {
 
   import CNF._
-  import Actor._
 
-
-  /**
-   *
-   * TODO change to class
-   */
-  object Distribute {
-
-    /**
-     * TODO factor this out so it's not stateful
-     */
-    object IdGen {
-      val prefix = "_G"
-      var i = 0
-      def next = { i+=1; prefix + i }
-      def allIds = (1 to i).map { prefix + _ }.toList
+  val sDistributeRule: Strategy = oncetd {
+    rule {
+      case BOr(BAnd(x,y),z) => BAnd(BOr(x,z), BOr(y,z))
+      case BOr(x,BAnd(y,z)) => BAnd(BOr(x,y), BOr(x,z))
     }
-
-    /**
-     * Substitute an expression with an identifier n. One pass of a Tseitin
-     * transform. Runs distribute on the substituted expression.
-     */
-    def subst(e: BExpr, timeout: Long): List[BExpr] = {
-      val n = IdGen.next
-      var ret: BExpr = null
-      val subbed = rewrite{
-        oncetd {
-          rule {
-            case BOr(x@BAnd(_,_),rest) =>
-              ret = x
-              BOr(BId(n),rest)
-            case BOr(rest,x@BAnd(_,_)) =>
-              ret = x
-              BOr(BId(n),rest)
-          }
-        }
-      }(e)
-
-      // Add equivalances and distribute on the new substituted expression
-      if (ret != null) {
-        println("Substituting " + n + " for " + ret)
-        (distribute(ret, timeout) map
-                { BId(n) iff _ } flatMap
-                { _.splitConjunctions }) ::: distribute(subbed, timeout)
-      }
-      else if (subbed == e) e.splitConjunctions //FIXME messy
-      else distribute(e, timeout * 2)
-    }
-
-    val sDistributeRule: Strategy = innermost {
-      rule {
-        case BOr(BAnd(x,y),z) => BAnd(BOr(x,z), BOr(y,z))
-        case BOr(x,BAnd(y,z)) => BAnd(BOr(x,y), BOr(x,z))
-      }
-    }
-
-    val dist: Actor = actor {
-      Actor.loop {
-        react {
-          case e: BExpr =>
-            reply(rewrite(sDistributeRule)(e))
-        }
-      }
-    }
-
-    def distribute(e: BExpr, timeout: Long): List[BExpr] = {
-      println("Distributing (timeout=" + timeout + "): " + e)
-      val res = dist !? (timeout, e)
-    
-      res match {
-        case Some(ret: BExpr) => ret.splitConjunctions
-        case None => subst(e, timeout)
-        case x => error("Undefined return value: " + x)
-      }
-    }
-
-    def distribute(exprs: List[BExpr]): List[BExpr] =
-      exprs flatMap { distribute(_, 5000L) }
-    
   }
 
   val sIffRule = everywheretd {
@@ -127,6 +51,15 @@ object CNFBuilder extends Rewriter {
   }
 
   /**
+   * Run until we reach a fixpoint.
+   */
+  def distribute(e: BExpr): List[BExpr] = {
+    val result = rewrite(sDistributeRule)(e)
+    if (result == e) result.splitConjunctions
+    else result.splitConjunctions flatMap distribute
+  }
+
+  /**
    * @param idMap Maps identifiers in the expression to an integer
    */
   def toClause(e: BExpr, idMap: collection.Map[String, Int]): Clause = e match {
@@ -139,17 +72,13 @@ object CNFBuilder extends Rewriter {
   /**
    * @param idMap Maps identifiers in the expression to an integer
    */
-  def toCNF(e: BExpr, idMap: collection.Map[String, Int]): CNF = {
-    val exprs =
-      rewrite(sIffRule <* sImpliesRule)(e)
+  def toCNF(e: BExpr, idMap: collection.Map[String, Int]) = {
+    println("toCNF: " + e)
+    rewrite(sIffRule <* sImpliesRule)(e)
         .simplify
         .splitConjunctions
-
-    val dist = Distribute.distribute(exprs)
-
-    Nil
-//        .flatMap { distribute(_).splitConjunctions }
-//        .map { toClause(_, idMap) }
+        .flatMap { distribute }
+        .map { toClause(_, idMap) }
   }
 
 }

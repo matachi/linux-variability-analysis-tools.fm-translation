@@ -40,9 +40,15 @@ abstract class TExpr {
    * Returns a single boolean expression.
    */
   def eq(other: TExpr): BExpr = other match {
+
     case TNo => toBExpr match {
       case (e1, e2) => !e1 & !e2
     }
+
+    case TMod => toBExpr match {
+      case (e1, e2) => e1 & !e2
+    }
+
     case TYes => toBExpr match {
       case (e1, e2) => e1 & e2
     }
@@ -56,25 +62,48 @@ abstract class TExpr {
    * Returns a single boolean expression.
    */
   def <=(other: TExpr): BExpr = (this, other) match {
+    
     case (TNo,_)  => BTrue
-    case (TMod,_) => (other eq TMod) | (other eq TYes)
     case (TYes,_) => other eq TYes
 
     case (_,TYes) => BTrue
-    case (_,TMod) => (this eq TMod) | (this eq TNo)
     case (_,TNo)  => this eq TNo
 
-    case _ =>
-      (toBExpr, other.toBExpr) match {
-        case ((l1, l2), (r1, r2)) => ((l1 | l2 ) implies (r1 | r2)) & !(l1 & l2 & r1 & !r2)
+    case _ => (toBExpr, other.toBExpr) match {
+
+        // x <= Mod
+        case ((l1, l2), (BTrue,BFalse)) => !l2
+
+        //Mod <= x
+        case ((BTrue, BFalse),(r1, r2)) => r1
+
+        case ((l1, l2), (r1, r2)) =>
+          // Before simplifying:
+          // (!(l1 | l2 ) implies (r1 | r2)) & !(l1 & l2 & r1 & !r2)
+          (!l1 | r1 | r2) & (!l2 | r1 | r2 ) & (!l1 | !l2 | !r1 | r2)
       }
   }
 
   /**
    * Returns a single boolean expression.
    */
-  def >(other: TExpr): BExpr =
-    !(this <= other)
+  def >(other: TExpr): BExpr = (this, other) match {
+    
+    case (TMod,_) => this eq TNo
+    case (_,TMod) => this eq TYes
+
+    case _ => (toBExpr, other.toBExpr) match {
+        //Yes > x
+        case ((BTrue, BTrue), (r1, r2)) => !r2
+
+        //x > No
+        case ((l1, l2), (BFalse, BFalse)) => l1
+
+        //FIXME
+        case ((l1, l2), (r1, r2)) =>
+          l1 & !r2 & (!l1 | l2 | !r1 | r2)
+      }
+  }
 
   def teq(other: TExpr): TExpr =
     TEq(this, other)
@@ -153,7 +182,7 @@ class TFMTranslation(k: AbstractKConfig) {
     val result = new ListBuffer[(String, Int)]
 
     // Iterate only through identifiers in the Kconfig (ignoring generated)
-    for (i <- 0 until (k.identifiers.size * 2) by 2) {
+    for (i <- 0 until model.length by 2) {
       val key = i + 1
 
       assert(Math.abs(model(i)) == key, model(i) + " != " + key)
@@ -199,7 +228,10 @@ class TFMTranslation(k: AbstractKConfig) {
    */
   def translate(c: AConfig): List[BExpr] = c match {
     case AConfig(id, t, inh, pro, defs, rev, ranges) =>
-      val rds = ((TNo: TExpr) /: rev){ _ | toTExpr(_) }
+
+      val rds = rev map { r => (toTExpr(r), TId(IdGen.next)) }
+      //FIXME converting every reverse dependency to new id
+      val rdsExpr = ((TNo: TExpr) /: rds){ case (x,(_, id)) => x | id }
       val rdsId = if (rds == TNo) TNo else TId(IdGen.next)
 
       def t(rest: List[Default], prev: List[Default]): List[BExpr] =
@@ -217,7 +249,8 @@ class TFMTranslation(k: AbstractKConfig) {
             (ante implies (TId(id) eq (tex | rdsId))) :: t(tail, h::prev)
         }
 
-    (rdsId eq rds) :: // reverse dependency equivalence
+    (rds map { case (e, id) => id eq e }) ::: // reverse dependency equivalence
+    (rdsId eq rdsExpr) :: // reverse dependency equivalence
             (rdsId <= TId(id)) ::  // reverse dependency lower bound
             (TId(id) <= toTExpr(inh)) ::  // inherited upper bound
             t(defs, Nil)

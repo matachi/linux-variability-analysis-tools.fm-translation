@@ -32,10 +32,11 @@ package gsd.linux
 trait Tseitin {
 
   object IdGen {
-     var i = 0
-     def next = { i+=1; "x" + i }
-     def allIds = (1 to i).map { "x" + _ }.toList
-   }
+    val prefix = "_T"
+    var i = 0
+    def next = { i+=1; prefix + i }
+    def allIds = (1 to i).map { "x" + _ }.toList
+  }
 
   /**
    * Assumes (bi-)implications have been factored out.

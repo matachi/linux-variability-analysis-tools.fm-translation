@@ -15,6 +15,9 @@ class TFMTest extends AssertionsForJUnit {
     sat.allConfigurations map trans.interpret
   }
 
+  def removeGenVars(in: List[List[(String, Int)]]) =
+    in map { _ remove { case (id, _) => id startsWith "_" } }
+
   implicit def toRichConfig(lst: List[(String, Int)]) =
     new RichConfig(lst)
 
@@ -101,7 +104,7 @@ class TFMTest extends AssertionsForJUnit {
         List(("A1", 2), ("B1", 0)),
         List(("A1", 1), ("B1", 1)),
         List(("A1", 2), ("B1", 1)),
-        List(("A1", 2), ("B1", 2))) === allConfigs(in))
+        List(("A1", 2), ("B1", 2))) === removeGenVars(allConfigs(in)))
   }
 
   @Test def multipleSelectsDerived {
@@ -137,7 +140,7 @@ class TFMTest extends AssertionsForJUnit {
     assert(List(
         List(("A1",0), ("B1", 0)),
         List(("A1",1), ("B1", 1)),
-        List(("A1",2), ("B1", 2))) === allConfigs(in))
+        List(("A1",2), ("B1", 2))) === removeGenVars(allConfigs(in)))
   }
 
   @Test def defaultM {
@@ -151,7 +154,7 @@ class TFMTest extends AssertionsForJUnit {
     assert(List(
       List(("A1",0), ("B1", 0)),
       List(("A1",1), ("B1", 1)),
-      List(("A1",1), ("B1", 2))) === allConfigs(in))
+      List(("A1",1), ("B1", 2))) === removeGenVars(allConfigs(in)))
   }
 
   @Test def defaultWithPrompt {
@@ -213,7 +216,7 @@ class TFMTest extends AssertionsForJUnit {
 
     assert {
       allConfigs(in) forall { c =>
-        (c valueOf "A1") <= (c valueOf "A2")
+        (c valueOf "A2") <= (c valueOf "A1")
       }
     }
 
@@ -263,7 +266,7 @@ class LinuxTest extends AssertionsForJUnit {
    */
   @Test def linux {
     println("Parsing Kconfig...")
-    val ck = parseKConfigFile("input/2.6.28.6.exconfig")
+    val ck = parseKConfigFile("input/2.6.28.6-edited.exconfig")
 
     println("Converting to abstract syntax...")
     val ak = ck.toAbstractKConfig
@@ -273,7 +276,7 @@ class LinuxTest extends AssertionsForJUnit {
     val exprs = trans.translate
 
     println("Converting to CNF...")
-    val sat = new SATBuilder(exprs, trans.idMap)
+    val sat = new SATBuilder(exprs, trans.idMap) with ConsoleLogger
     
     println("Running SAT...")
     println("Is SAT? " + sat.isSatisfiable)
