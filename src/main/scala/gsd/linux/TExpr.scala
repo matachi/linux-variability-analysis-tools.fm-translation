@@ -22,6 +22,8 @@ object TExpr extends Logged {
       case NEq(l, r) => !(t(l) teq t(r))
       case Not(e) => !t(e)
 
+      case Literal("") => //FIXME ?
+        TNo
       case Literal(_) | KHex(_) | KInt(_) =>
         log("WARN: Literal / Hex / Int not handled, returning TYes")
         TYes
@@ -213,6 +215,13 @@ class TFMTranslation(k: AbstractKConfig) {
       
       k.configs filter
               { _.ktype == KBoolType } map
+              { _.id } map
+              { id => BId(id + "_1") implies BId(id + "_2") }
+    } ::: {
+      // Disallow mod state from String, Int and Hex configs
+      
+      k.configs filter
+              { t => t.ktype == KIntType || t.ktype == KHexType || t.ktype == KStringType } map
               { _.id } map
               { id => BId(id + "_1") implies BId(id + "_2") }
     } ::: {

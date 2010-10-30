@@ -222,6 +222,34 @@ class TFMTest extends AssertionsForJUnit {
 
   }
 
+  @Test def stringConfig1 {
+
+    val in = """
+      config A1 string {
+        prompt "A1" if []
+      }
+      config A2 boolean {
+      default [y] if [A1 = "Test"]
+      }
+      """
+
+    allConfigs(in) foreach println
+  }
+
+  @Test def stringConfig2 {
+
+    val in = """
+      config A1 string {
+        prompt "A1" if []
+      }
+      config A2 boolean {
+      default [y] if [A1 = ""]
+      }
+      """
+
+    allConfigs(in) foreach println
+  }
+
   @Test def allConfigurations {
     {
       val sat = new SATBuilder(List(List(1,2,3), List(-1,-2,-3)), 3)
