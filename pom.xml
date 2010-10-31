@@ -26,10 +26,10 @@
 
     <groupId>ca.uwaterloo.gsd</groupId>
     <artifactId>fm-translation</artifactId>
-    <version>0.1-SNAPSHOT</version>
+    <version>0.2-SNAPSHOT</version>
     
     <properties>
-        <scala.version>2.7.7</scala.version>
+        <scala.version>2.8.0</scala.version>
     </properties>
 
     <repositories>
@@ -53,6 +53,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.3.2</version>
                 <configuration>
                     <source>1.5</source>
                     <target>1.5</target>
@@ -61,6 +62,7 @@
             <plugin>
                 <groupId>org.scala-tools</groupId>
                 <artifactId>maven-scala-plugin</artifactId>
+                <version>2.14.1</version>
                 <executions>
                     <execution>
                         <goals>
@@ -70,6 +72,9 @@
                     </execution>
                 </executions>
                 <configuration>
+                    <args>
+                        <arg>-deprecation</arg>
+                    </args>
                     <scalaVersion>${scala.version}</scalaVersion>
                 </configuration>
             </plugin>
@@ -80,7 +85,7 @@
         <dependency>
             <groupId>ca.uwaterloo.gsd</groupId>
             <artifactId>lvat</artifactId>
-            <version>0.1-SNAPSHOT</version>
+            <version>0.2-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.scala-lang</groupId>
@@ -108,13 +113,13 @@
         <dependency>
             <groupId>org.scalatest</groupId>
             <artifactId>scalatest</artifactId>
-            <version>1.0</version>
+            <version>1.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.scala-tools.testing</groupId>
-            <artifactId>scalacheck_2.7.7</artifactId>
-            <version>1.6</version>
+            <artifactId>scalacheck_2.8.0</artifactId>
+            <version>1.7</version>
             <scope>test</scope>
         </dependency>
         <dependency>

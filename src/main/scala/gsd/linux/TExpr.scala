@@ -187,17 +187,17 @@ class TFMTranslation(k: AbstractKConfig) {
     for (i <- 0 until model.length by 2) {
       val key = i + 1
 
-      assert(Math.abs(model(i)) == key, model(i) + " != " + key)
+      assert(math.abs(model(i)) == key, model(i) + " != " + key)
       val i1 = model(i) > 0
       val i2 = model(i+1) > 0
-      val id = varMap(key).slice(0, varMap(key).length - 2) //FIXME drop _1 suffix
+      val id: String = varMap(key).slice(0, varMap(key).length - 2) //FIXME drop _1 suffix
       val state = (i1, i2) match {
         case (true, true)   => 2
         case (true, false)  => 1
         case (false, false) => 0 
         case (false, true)  => error("(0,1) state should never be in a model!")
       }
-      result += (id, state)
+      result += Tuple2(id, state)
     }
     
   result.toList
@@ -207,10 +207,10 @@ class TFMTranslation(k: AbstractKConfig) {
    * Stateful: Changes identifiers in IdGen
    */
   lazy val translate: List[BExpr] =
-    (translateNotSimplified map { _.simplify }) - BTrue
+    (translateNotSimplified map { _.simplify }) filterNot { _ == BTrue }
 
   lazy val translateNotSimplified: List[BExpr] =
-    ((k.configs flatMap translate) - BTrue) ::: {
+    ((k.configs flatMap translate) filterNot { _ == BTrue}) ::: {
       // Disallow mod state from Boolean configs
       
       k.configs filter

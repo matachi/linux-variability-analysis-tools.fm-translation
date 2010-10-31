@@ -39,7 +39,7 @@ object ClaferTranslationMain extends ClaferDocument {
 
     println("Parsing CNF...")
     val CNFData(cnf, ids, gens) = CNFParser.parseCNFFile(args(1))
-    val idMap = IdMapBuilder.mkIdMap(ids ++ gens)
+    val idMap = Map() ++ ((ids ++ gens).zipWithIndex map { case(id,i) => (id, i + 1) })
 
     println("Parsing Kconfig...")
     val ck = KConfigParser.parseKConfigFile(args(0))

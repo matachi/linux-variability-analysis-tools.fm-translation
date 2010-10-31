@@ -29,7 +29,6 @@ import CNF._
 object CNFParser extends RegexParsers with ImplicitConversions {
 
   case class CNFData(cnf: CNF, ids: List[String], generated: List[String])
-          extends Triple(cnf, ids, generated)
 
   override protected val whiteSpace = """[ \t\f]""".r
 

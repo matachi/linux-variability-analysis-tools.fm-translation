@@ -20,9 +20,9 @@
 
 package gsd.linux
 
-import kiama.rewriting.Rewriter
+import org.kiama.rewriting.Rewriter._
 
-object BExprUtil extends Rewriter {
+object BExprUtil {
 
   val sFixExpr =
     innermost {
@@ -44,7 +44,7 @@ object BExprUtil extends Rewriter {
     }
 
   def removeTrue(lst: List[BExpr]): List[BExpr] =
-    lst remove { _ == BTrue }
+    lst filterNot { _ == BTrue }
 
   def rewriteExpr(lst: List[BExpr]): List[BExpr] =
     rewrite(sFixExpr)(lst)

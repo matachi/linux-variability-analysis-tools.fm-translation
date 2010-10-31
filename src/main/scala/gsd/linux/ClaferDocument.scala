@@ -38,7 +38,7 @@ trait ClaferDocument extends B2ExprDocument {
 
   def toText(f: Node[BExpr]): Text = f match {
     case OFeature(name,t,ctcs,cs) =>
-      fix(name) +: "?" ::  Block("{", "}", cs map toText) :: crossTree(ctcs)
+      fix(name) +: ("?": Text) ::  Block("{", "}", cs map toText) :: crossTree(ctcs)
 
     case MFeature(name,t,ctcs,cs) =>
       fix(name) :: Block("{", "}", cs map toText) :: crossTree(ctcs)
@@ -67,8 +67,8 @@ trait B2ExprDocument extends ClaferTransforms {
 
   def toExprText(e: BExpr): Text = {
     def _paren(e: BExpr): Text =
-      "(" +: toExprText(e) +: ")"
-
+      "(" +: toExprText(e) +: (")": Text)
+    
     e match {
       case BTrue => "1"  //FIXME Clafer doesn't have true
       case BFalse => "0" //FIXME Clafer doesn't have false

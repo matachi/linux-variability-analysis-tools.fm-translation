@@ -1,7 +1,7 @@
 package gsd.linux.cnf
 
 import gsd.linux._
-import kiama.rewriting.Rewriter
+import org.kiama.rewriting.Rewriter._
 import collection.mutable.HashMap
 
 /**
@@ -27,7 +27,7 @@ object IdMap {
 }
 
 
-object CNFBuilder extends Rewriter {
+object CNFBuilder {
 
   import CNF._
 

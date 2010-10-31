@@ -22,8 +22,9 @@ package gsd.linux
 
 import FMTranslationUtil._
 import BExpr._
-
 import TypeFilterList._
+
+import org.kiama.rewriting.Rewriter._
 
 object BFMTranslation {
 
@@ -57,7 +58,8 @@ object BFMTranslation {
     }
 
     //Configs that are referenced in configs but not declared
-    val freeVars = k.identifiers.toList -- (k.allConfigs map { _.id })
+    val freeVars =
+      k.identifiers.toList filterNot ((k.allConfigs map { _.id }) contains)
 
     def mkConfig(c: CConfig): OFeature[T] =
       OFeature(c.id, BoolFeat, configCTCs(c.id), c.children map mkFeature)
@@ -163,7 +165,7 @@ object BFMTranslation {
      * TODO there may be more cases than this
      */
     def keepAsAntecedent(e: KExpr): Boolean =
-      KExprRewriter.count {
+      count {
         case _:Eq | NEq(_,Yes) | NEq(_,Mod) => 1
       }(e) == 0
 
@@ -188,7 +190,7 @@ object BFMTranslation {
     def mkRevDeps(lst: List[KExpr]) = lst map toBExpr
 
     def mkDefaults(lst: List[Default]) =
-      mkDefaultList(lst remove _negExprs, Nil)
+      mkDefaultList(lst filterNot _negExprs, Nil)
 
     val antecedent = mkRevDeps(c.rev filter keepAsAntecedent) :::
                      mkDefaults(c.defs filter { case Default(e, c) =>

@@ -20,7 +20,7 @@
 
 package gsd.linux
 
-import kiama.rewriting.Rewriter
+import org.kiama.rewriting.Rewriter._
 
 /**
  * Type aliases and implicit conversions or CNF and Clauses.
@@ -42,7 +42,10 @@ object CNF {
 
 }
 
-sealed abstract case class Lit(value: String) {
+object Lit {
+  def unapply(l: Lit): Option[String] = Some(l.value)
+}
+sealed abstract class Lit(val value: String) {
   def unary_- : Lit
   def toExpression: BExpr
 }
@@ -63,7 +66,7 @@ class CNFBuilder(e: BExpr) extends CNFRewriter {
   def toCNF: CNF =
     rewrite(iffRule <* impliesRule <* demorgansRule <* doubleNotRule <*
           notValueRule <* constantsRule)(e).splitConjunctions
-        .remove { _ == BTrue }
+        .filterNot { _ == BTrue }
         .flatMap { transform }
         .map { _.mkClause }
 
@@ -83,7 +86,7 @@ class CNFBuilder(e: BExpr) extends CNFRewriter {
   }
 }
 
-trait CNFRewriter extends Rewriter with Tseitin {
+trait CNFRewriter extends Tseitin {
 
   val demorgansRule = reduce {
     rule {

@@ -41,7 +41,7 @@ object FMTranslationUtil {
     val configMap = Hierarchy.mkParentMap(k)
 
     //Remove menus, choices and dead features from the parentMap
-    val process = configMap.toList remove {
+    val process = configMap.toList filterNot {
       case (_:CMenu,_) | (_:CChoice,_) => true
       case (child,_) => !sat.isSatisfiable(PosLit(child.id))
     }

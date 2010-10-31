@@ -22,7 +22,6 @@ package gsd.linux
 
 import net.sf.javabdd._
 import CNF._
-import IdMapBuilder._
 
 object BDDBuilder {
   def begin0[T](thunk : => T)(after : => Unit) : T = {
@@ -44,7 +43,8 @@ object BDDBuilder {
 }
 
 class BDDBuilder(val idMap: Map[String, Int]) {
-  val varMap = idMap.inverse
+  
+  val varMap = Map() ++ (idMap map { case (k,v) => (v,k) })
 
   val factory = BDDFactory.init("java", 15000000, 1000000)
   factory.setVarNum(idMap.keySet.size * 2)

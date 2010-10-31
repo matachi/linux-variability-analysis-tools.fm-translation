@@ -27,8 +27,6 @@ import CNF._
 import org.sat4j.core.VecInt
 import org.sat4j.specs.ContradictionException
 
-import IdMapBuilder._
-
 /**
  * WARNING: The SAT solver has its own internal state, be careful about
  * calling certain stateful operations (i.e. like model) on the SAT solver.
@@ -37,7 +35,7 @@ import IdMapBuilder._
  */
 class SATBuilderOld(val idMap: Map[String,Int]) {
 
-  lazy val varMap = idMap.inverse
+  lazy val varMap = Map() ++ (idMap map { case(id,v) => (v,id) })
   val solver = newSolver
   protected def newSolver = SolverFactory.newDefault
 
