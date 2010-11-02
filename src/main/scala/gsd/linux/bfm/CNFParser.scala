@@ -38,8 +38,8 @@ object CNFParser extends RegexParsers with ImplicitConversions {
 
   val literal = """[-]?\w+""".r ^^
     { s =>
-      if (s.charAt(0) == '-') NegLit(s.slice(1,s.length))
-      else PosLit(s)
+        if (s.charAt(0) == '-') NegLit(s.slice(1,s.length))
+        else PosLit(s)
     }
   val clause = rep(literal)
   val cnfFile = ids ~ gens ~ rep(clause <~ nl) ^^ {

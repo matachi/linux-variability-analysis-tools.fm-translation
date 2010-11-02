@@ -37,11 +37,20 @@ import util.logging.Logged
  *
  * @author Steven She (shshe@gsd.uwaterloo.ca)
  */
-class SATBuilder(cnf: CNF, size: Int) extends Logged {
+class SATBuilder(cnf: CNF, val size: Int, val genVars: Set[Int] = Set()) extends Logged {
 
   def this(exprs: Iterable[BExpr], idMap: Map[String, Int]) =
     this(exprs flatMap { CNFBuilder.toCNF(_, idMap) }, idMap.size)
-  
+
+  val genArray: Array[Boolean] = {
+    val result = new Array[Boolean](size + 1)
+    genVars foreach { result(_) = true }
+    result
+  }
+
+  val realVars: Set[Int] =
+    Set() ++ (genArray.zipWithIndex filter { _._1 } map { _._2 })
+
   val solver = newSolver
   protected def newSolver = new ModelIterator(SolverFactory.newDefault)
   addCNF(cnf, size)

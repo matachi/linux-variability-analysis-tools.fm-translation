@@ -8,7 +8,6 @@ import org.scalatest.prop.Checkers
 import org.scalacheck.Prop._
 
 import CNF._
-import IdMapBuilder._
 import BDDBuilder._
 
 class CNFTest extends Suite with Checkers with ExpressionGenerator {
