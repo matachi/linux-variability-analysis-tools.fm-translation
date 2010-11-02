@@ -10,11 +10,6 @@ import gsd.graph._
  */
 trait ImplBuilder extends SATBuilder {
 
-  val idMap: Map[String, Int]
-  lazy val varMap: Map[Int, String] = Map() ++ (idMap map { case (k,v) => (v,k) })
-
-  lazy val features: Set[String] = realVars map (varMap apply)
-
   /**
    * Same effect as isSatisfiable, but with a different name to avoid problems
    * with type erasure.
@@ -52,7 +47,7 @@ trait ImplBuilder extends SATBuilder {
   /**
    * Returns true iff v1 implies v2, false otherwise
    */
-  def implication(v1: Int, v2: Int): Boolean = !isSatisfiable(List(v1, v2))
+  def implication(v1: Int, v2: Int): Boolean = !isSatisfiable(List(v1, -v2))
 
   /**
    * Dead features should be removed prior to calling this otherwise these
@@ -63,7 +58,10 @@ trait ImplBuilder extends SATBuilder {
    * model. In that model, if there exists i = TRUE, and j = FALSE, then we
    * know that i does NOT imply j. Look at the truth table for implication.
    */
-  def mkImplicationGraph(done: Array[Array[Boolean]] = mkDoneArray): DirectedGraph[String] = {
+  def mkImplicationGraph[T](
+          varMap: Map[Int,T] = Map[Int,Int]() withDefault { v => v },
+          done: Array[Array[Boolean]] = mkDoneArray)
+      : DirectedGraph[T] = {
 
     def markNonImplications =
       for {
@@ -73,7 +71,7 @@ trait ImplBuilder extends SATBuilder {
         done(i)(j) = true
       }
 
-    val result = new collection.mutable.ListBuffer[Edge[String]]
+    val result = new collection.mutable.ListBuffer[Edge[T]]
 
     for {
       i <- 1 to size
@@ -86,7 +84,8 @@ trait ImplBuilder extends SATBuilder {
       else markNonImplications
     }
 
-    new DirectedGraph(features, result)
+    new DirectedGraph(Set() ++ (realVars map varMap.apply), result)
+
   }
 
 
