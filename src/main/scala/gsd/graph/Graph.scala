@@ -7,7 +7,12 @@ abstract class Graph[V](val vertices: Set[V], val edges: EdgeMap[V]) {
   def this(vs: Set[V], es: Iterable[Edge[V]]) =
     this(vs, toMultiMap(es))
 
-  assert (!(edges exists { case (x,y) => y contains x }), "selp-loops not allowed: " + edges)
+  assert (!(edges exists { case (x,y) => y contains x }),
+    "selp-loops not allowed: " + edges)
+  
+  assert ((edges forall {
+    case (x,y) => (vertices contains x) && (y forall (vertices contains))
+  }), "Edge contains vertex that is not in this graph!")
 
     val revEdges: EdgeMap[V] = toMultiMap {
       edges flatMap {

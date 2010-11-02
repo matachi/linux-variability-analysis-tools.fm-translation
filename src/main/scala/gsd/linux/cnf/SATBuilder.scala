@@ -49,7 +49,7 @@ class SATBuilder(cnf: CNF, val size: Int, val genVars: Set[Int] = Set()) extends
   }
 
   val realVars: Set[Int] =
-    Set() ++ (genArray.zipWithIndex filter { _._1 } map { _._2 })
+    Set() ++ (1 to size) -- (genArray.zipWithIndex filter { _._1 } map { _._2 })
 
   val solver = newSolver
   protected def newSolver = new ModelIterator(SolverFactory.newDefault)

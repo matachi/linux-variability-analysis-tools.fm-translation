@@ -10,6 +10,8 @@ package object graph {
     case Edge(source, target) => (source, target)
   }
 
+  implicit def toEdge[T](t: (T,T)) = Edge(t._1, t._2)
+
   implicit def toRichEdgeMap[T](map : Map[T,Set[T]]) =
     new RichEdgeMap[T](map)
 
@@ -24,6 +26,7 @@ package object graph {
 
     def -(t: Edge[T]): EdgeMap[T] = t match {
       case Edge(u,v) => map.get(u) match {
+        case Some(vs) if vs == Set(v) => map - u
         case Some(vs) => map - u + Tuple2(u, vs - v)
         case None => map
       }
