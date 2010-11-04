@@ -21,7 +21,7 @@
 package gsd.linux
 
 import net.sf.javabdd._
-import CNF._
+import cnf._
 
 object BDDBuilder {
   def begin0[T](thunk : => T)(after : => Unit) : T = {
@@ -90,6 +90,6 @@ class BDDBuilder(val idMap: Map[String, Int]) {
    * Converts a BDD representating a satisfying assignment to CNF form.
    */
   def toCNF(sat: BDD): CNF = 
-    sat.scanSet.map { v => List(PosLit(varMap(v))) } ++
-            (Set() ++ idMap.values -- sat.scanSet).map { v => List(NegLit(varMap(v))) }
+    sat.scanSet.map { v => List(v) } ++
+            (Set() ++ idMap.values -- sat.scanSet).map { v => List(-v) }
 }

@@ -2,7 +2,8 @@ package gsd.graph
 
 case class Edge[V](source: V, target: V)
 
-abstract class Graph[V](val vertices: Set[V], val edges: EdgeMap[V]) {
+abstract class Graph[V](val vertices: Set[V], val edges: EdgeMap[V])
+        extends GraphWriter[V] {
 
   def this(vs: Set[V], es: Iterable[Edge[V]]) =
     this(vs, toMultiMap(es))
@@ -28,6 +29,8 @@ abstract class Graph[V](val vertices: Set[V], val edges: EdgeMap[V]) {
 
   def ++(ts : Iterable[Edge[V]]): This = New(vertices, edges.toEdgeMap ++ ts)
   def --(ts : Iterable[Edge[V]]): This = New(vertices, edges.toEdgeMap -- ts)
+
+  def toParseString(implicit toOrdered: V => Ordered[V]): String
 }
 
 case class DirectedGraph[V](vs: Set[V], es: EdgeMap[V]) extends Graph[V](vs,es) {
@@ -42,4 +45,49 @@ case class DirectedGraph[V](vs: Set[V], es: EdgeMap[V]) extends Graph[V](vs,es) 
 
   def reverseEdges = New(vs, revEdges)
 
+  def toParseString(implicit toOrdered: V => Ordered[V]) =
+    mkParseString("->")
+
 }
+
+trait GraphWriter[V] {
+  this: Graph[V] =>
+
+  def mkParseString(edgeSep: String)
+                      (implicit toOrdered: V => Ordered[V]): String = {
+
+    val sb = new StringBuilder
+
+    val vmap = Map() ++ {
+      vertices.toList
+          .sortWith { (x,y) => toOrdered(x) < y }
+          .zipWithIndex
+          .map { case (v,i) => (v, i+1) }
+    }
+
+    for ((v, id) <- vmap)
+      sb append id append ": " append v append ";\n"
+
+    var len = 0
+    for {
+      (src, targets) <- edges.toList sortWith { case ((x,_),(y,_)) => x < y }
+      tar <- targets.toList sortWith { _ < _ }
+    } {
+      val prev = sb.length
+      sb append vmap(src) append edgeSep append vmap(tar) append ";"
+      val curr = sb.length
+
+      len += curr - prev
+
+      if (len > 80) {
+        len = 0
+        sb append "\n"
+      }
+    }
+    
+    sb toString
+  }
+  
+}
+
+

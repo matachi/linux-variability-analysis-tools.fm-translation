@@ -25,4 +25,10 @@ class GraphTest extends AssertionsForJUnit {
     expect(g(List(1,2,3), 1->2))(g(1->2, 2->3) - (2->3))
     expect(g(List(1,2)))(g(List(1,2)) - (1->2))
   }
+
+  @Test def toParseString {
+    expect("")(g().toParseString)
+    expect("1: 1;\n2: 2;\n")(g(Set(1,2)).toParseString)
+    expect("1: 1;\n2: 2;\n3: 3;\n1->2;2->3;3->1;")(g(1->2, 2->3, 3->1).toParseString)
+  }
 }
