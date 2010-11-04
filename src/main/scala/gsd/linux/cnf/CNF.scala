@@ -4,16 +4,6 @@ import gsd.linux._
 import org.kiama.rewriting.Rewriter._
 import collection.mutable.HashMap
 
-/**
- * A new CNF class, will replace old one.
- */
-object CNF {
-
-  type Clause = List[Int]
-  type CNF = Iterable[Clause]
-
-}
-
 object IdMap {
   def apply(es: Iterable[BExpr]): Map[String, Int] = {
     val map = new HashMap[String, Int]
@@ -28,8 +18,6 @@ object IdMap {
 
 
 object CNFBuilder {
-
-  import CNF._
 
   val sDistributeRule: Strategy = oncetd {
     rule {

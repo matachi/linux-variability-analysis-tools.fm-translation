@@ -21,14 +21,11 @@ package gsd.linux.cnf
 
 import org.sat4j.minisat.SolverFactory
 
-import CNF._
 import org.sat4j.core.VecInt
 import org.sat4j.specs.ContradictionException
 import org.sat4j.tools.ModelIterator
 import collection.mutable.ListBuffer
 import gsd.linux.BExpr
-import org.sat4j.reader.InstanceReader
-import java.util.Arrays
 import util.logging.Logged
 
 /**
@@ -39,8 +36,8 @@ import util.logging.Logged
  */
 class SATBuilder(cnf: CNF, val size: Int, val genVars: Set[Int] = Set()) extends Logged {
 
-  def this(exprs: Iterable[BExpr], idMap: Map[String, Int]) =
-    this(exprs flatMap { CNFBuilder.toCNF(_, idMap) }, idMap.size)
+  def this(exprs: Iterable[BExpr], idMap: Map[String, Int], gens: Set[String]) =
+    this(exprs flatMap { CNFBuilder.toCNF(_, idMap) }, idMap.size, gens map idMap.apply)
 
   val genArray: Array[Boolean] = {
     val result = new Array[Boolean](size + 1)

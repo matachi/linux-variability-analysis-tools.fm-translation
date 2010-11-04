@@ -1,9 +1,10 @@
 package gsd.linux
 
-import cnf.SATBuilder
+import cnf.{ImplBuilder, SATBuilder}
 import org.scalatest.junit.AssertionsForJUnit
 import org.junit.Test
 import util.logging.ConsoleLogger
+import java.io.PrintStream
 
 class TFMTest extends AssertionsForJUnit {
 
@@ -11,7 +12,7 @@ class TFMTest extends AssertionsForJUnit {
     val ak = KConfigParser.parseKConfig(in).toAbstractKConfig
     val trans = new TFMTranslation(ak)
     val exprs = trans.translate
-    val sat = new SATBuilder(exprs, trans.idMap)
+    val sat = new SATBuilder(exprs, trans.idMap, Set[String]())
     sat.allConfigurations map trans.interpret
   }
 
@@ -282,7 +283,10 @@ class TFMTest extends AssertionsForJUnit {
 
 }
 
-
+/**
+ * Needs big stack size, -Xss 4096K seems to work
+ * Needs bigger heap size for scala 2.8.0 when building Done array, -Xmx1g
+ */
 class LinuxTest extends AssertionsForJUnit {
 
   import KConfigParser._
@@ -304,10 +308,17 @@ class LinuxTest extends AssertionsForJUnit {
     val exprs = trans.translate
 
     println("Converting to CNF...")
-    val sat = new SATBuilder(exprs, trans.idMap) with ConsoleLogger
+    val sat = new SATBuilder(exprs, trans.idMap, trans.generated)
+                with ImplBuilder with ConsoleLogger
     
     println("Running SAT...")
     println("Is SAT? " + sat.isSatisfiable)
+
+    println("Building implication graph...")
+    val g = sat.mkImplicationGraph(trans.varMap)
+
+    val out = new PrintStream("2.6.28.6.implg")
+    out.println(g.toParseString)
   }
 
 }

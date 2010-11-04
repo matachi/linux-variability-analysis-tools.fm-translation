@@ -165,8 +165,13 @@ class TFMTranslation(k: AbstractKConfig) {
     def allIds = (1 to i).map { prefix + _ }.toList
   }
 
+  def generated: Set[String] =
+    Set() ++ IdGen.allIds
+
   def identifiers: Set[String] =
     Set() ++ k.identifiers ++ IdGen.allIds
+  
+  def size: Int = identifiers.size
 
   /*
    * Var i (odd) represents identifier x_1, Var i+1 (even) represents x_2.
@@ -177,6 +182,10 @@ class TFMTranslation(k: AbstractKConfig) {
               { id => List(id + "_1", id + "_2") }).zipWithIndex map
                      { case (id,i) => (id, i + 1) }
     }
+
+
+  def varMap: Map[Int, String] =
+    Map() ++ (idMap map { case (id,v) => (v,id) })
 
 
   def interpret(model: Array[Int]): List[(String, Int)] = {

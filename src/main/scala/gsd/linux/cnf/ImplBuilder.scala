@@ -77,6 +77,7 @@ trait ImplBuilder extends SATBuilder {
       i <- 1 to size
       j <- 1 to size if !done(i)(j)
     } {
+      log("[DEBUG] IG: " + i + "/" + size + " " + j + "/" + size)
       if (implication(i,j)) {
         result += Edge(varMap(i), varMap(j))
         done(i)(j) = true
