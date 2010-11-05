@@ -11,7 +11,7 @@ import org.scalacheck.Prop._
 import cnf._
 import BDDBuilder._
 
-class CNFTest extends Suite with Checkers with ExpressionGenerator {
+class CNFTest extends Suite with Checkers with ExpressionGenerator with CNFGenerator {
 
   implicit def toBId(s: String) = BId(s)
 
@@ -29,7 +29,7 @@ class CNFTest extends Suite with Checkers with ExpressionGenerator {
   }
 
 
-  @Test def dimacs {
+  @Test def dimacsWriter {
     val cnf = mkCNF(List(1,2), List(-1,-2))
     expect("c 1 a\nc 2 b\nc 3 c\np cnf 3 2\n1 2\n-1 -2\n")(cnf.toDimacs(Map(1->"a", 2->"b",3->"c")))
     expect("c 1 a\nc 2 b\nc 3$ c\np cnf 3 2\n1 2\n-1 -2\n")(cnf.toDimacs(Map(1->"a", 2->"b",3->"c"), Set(3)))
@@ -41,6 +41,14 @@ class CNFTest extends Suite with Checkers with ExpressionGenerator {
     expect(DimacsHeader(Map(1 -> "a", 2 -> "b", 3 -> "c", 4 -> "d"), Set(3)))(header)
     val problem = DimacsReader.readString(in)
     expect(DimacsProblem(4, Vector(List(1, 2), List(-1, -2))))(problem)
+  }
+
+  @Test def dimacsAuto {
+    check {
+      forAll { (c: GeneratedCNF) =>
+        DimacsReader.readString(c.cnf.toDimacs(c.varMap, c.generated)).cnf == c.cnf
+      }
+    }
   }
 
 

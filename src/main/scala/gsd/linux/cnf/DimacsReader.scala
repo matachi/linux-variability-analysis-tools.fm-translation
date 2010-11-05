@@ -23,9 +23,9 @@ object DimacsReader {
 
     val cnf =
       for (i <- 0 until numClauses.toInt) yield
-        s.nextLine.split(' ').toList map { _.toInt }
+        s.nextLine.split(' ').filterNot { _ == "" }.toList map { _.toInt }
 
-    DimacsProblem(numVars.toInt, cnf)
+    DimacsProblem(numVars.toInt, cnf.toList)
   }
 
   def readHeaderString(s: String) = readHeader(new Scanner(s))
