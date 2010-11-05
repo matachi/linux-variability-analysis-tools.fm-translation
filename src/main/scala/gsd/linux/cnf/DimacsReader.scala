@@ -28,6 +28,7 @@ object DimacsReader {
     DimacsProblem(numVars.toInt, cnf.toList)
   }
 
+  def readHeaderFile(file: String) = readHeader(new Scanner(new File(file)))
   def readHeaderString(s: String) = readHeader(new Scanner(s))
 
   def readHeader(in: Scanner): DimacsHeader = {
