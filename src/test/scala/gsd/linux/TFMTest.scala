@@ -1,6 +1,6 @@
 package gsd.linux
 
-import cnf.{ImplBuilder, SATBuilder}
+import cnf._
 import org.scalatest.junit.AssertionsForJUnit
 import org.junit.Test
 import util.logging.ConsoleLogger
@@ -307,18 +307,23 @@ class LinuxTest extends AssertionsForJUnit {
     val trans = new TFMTranslation(ak) with ConsoleLogger
     val exprs = trans.translate
 
-    println("Converting to CNF...")
-    val sat = new SATBuilder(exprs, trans.idMap, trans.generated)
-                with ImplBuilder with ConsoleLogger
+    val out = new PrintStream("2.6.28.6.dimacs")
+    out.println(exprs.toCNF(trans.idMap).toDimacs(trans.varMap))
+    out.close
     
-    println("Running SAT...")
-    println("Is SAT? " + sat.isSatisfiable)
 
-    println("Building implication graph...")
-    val g = sat.mkImplicationGraph(trans.varMap)
-
-    val out = new PrintStream("2.6.28.6.implg")
-    out.println(g.toParseString)
+//    println("Converting to CNF...")
+//    val sat = new SATBuilder(exprs, trans.idMap, trans.generated)
+//                with ImplBuilder with ConsoleLogger
+//
+//    println("Running SAT...")
+//    println("Is SAT? " + sat.isSatisfiable)
+//
+//    println("Building implication graph...")
+//    val g = sat.mkImplicationGraph(trans.varMap)
+//
+//    val out = new PrintStream("2.6.28.6.implg")
+//    out.println(g.toParseString)
   }
 
 }
