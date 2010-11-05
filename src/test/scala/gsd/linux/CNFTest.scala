@@ -40,14 +40,12 @@ class CNFTest extends Suite with Checkers with ExpressionGenerator with CNFGener
     val header = DimacsReader.readHeaderString(in)
     expect(DimacsHeader(Map(1 -> "a", 2 -> "b", 3 -> "c", 4 -> "d"), Set(3)))(header)
     val problem = DimacsReader.readString(in)
-    expect(DimacsProblem(4, Vector(List(1, 2), List(-1, -2))))(problem)
+    expect(DimacsProblem(4, List(List(1, 2), List(-1, -2))))(problem)
   }
 
-  @Test def dimacsAuto {
-    check {
-      forAll { (c: GeneratedCNF) =>
-        DimacsReader.readString(c.cnf.toDimacs(c.varMap, c.generated)).cnf == c.cnf
-      }
+  @Test def dimacsAuto = check {
+    forAll { (c: GeneratedCNF) =>
+      DimacsReader.readString(c.cnf.toDimacs(c.varMap, c.generated)).cnf == c.cnf
     }
   }
 
