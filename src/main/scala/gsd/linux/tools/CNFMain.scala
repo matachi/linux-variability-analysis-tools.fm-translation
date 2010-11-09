@@ -46,12 +46,20 @@ object ImplGraphMain extends ConsoleLogger {
     val sat = new SATBuilder(dimacs.cnf, dimacs.numVars, header.generated)
                 with ImplBuilder with ConsoleLogger
 
+
     log("Building implication graph...")
-    val g = sat.mkImplicationGraph(header.varMap)
+    log("[WARN] Considering features that end with _2 as generated")
+    val g = sat.mkImplicationGraph(header.varMap,
+              header.varMap filter
+                { case (k,v) => v.endsWith("_2") } map { _._1 })
 
     val out = new PrintStream(p.implgFile)
     out.println(g.toParseString)
     out.close
+
+    val graphviz = new PrintStream(p.graphvizFile)
+    graphviz.println(g.toGraphvizString())
+    graphviz.close
   }
 
 }

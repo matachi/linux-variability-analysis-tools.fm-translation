@@ -14,6 +14,7 @@ trait Project {
   lazy val exconfigFile: String = base + ".exconfig"
   lazy val dimacsFile: String = base + ".dimacs"
   lazy val implgFile: String = base + ".implg"
+  lazy val graphvizFile: String = base + ".dot"
 }
 
 object LinuxProject extends Project {
