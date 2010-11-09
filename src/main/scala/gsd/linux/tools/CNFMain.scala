@@ -5,12 +5,9 @@ import util.logging.ConsoleLogger
 import gsd.linux.cnf.{ImplBuilder, SATBuilder, DimacsReader}
 import gsd.linux.{KConfigParser, TFMTranslation}
 
-trait CNFMain extends ConsoleLogger {
+trait CNFMain extends ConsoleLogger with Project {
 
   import gsd.linux.cnf._
-
-  val inFile: String
-  val outFile: String
 
   def main(args: Array[String]) {
     log("Parsing Kconfig...")
@@ -30,15 +27,10 @@ trait CNFMain extends ConsoleLogger {
 
 }
 
-object LinuxCNFMain extends CNFMain {
-  val inFile = "input/2.6.28.6-edited.exconfig"
-  val outFile = "input/2.6.28.6.dimacs"
-}
+object LinuxCNFMain extends LinuxProject with CNFMain
+object BusyboxCNFMain extends BusyboxProject with CNFMain 
 
-trait ImplGraphMain extends ConsoleLogger {
-
-  val inFile: String
-  val outFile: String
+trait ImplGraphMain extends ConsoleLogger with Project {
 
   def main(args: Array[String]) {
     log("Reading Dimacs File...")
@@ -47,7 +39,7 @@ trait ImplGraphMain extends ConsoleLogger {
 
     log("Initializing SAT solver...")
     val sat = new SATBuilder(dimacs.cnf, dimacs.numVars, header.generated)
-                with ImplBuilder
+                with ImplBuilder with ConsoleLogger
 
     log("Building implication graph...")
     val g = sat.mkImplicationGraph(header.varMap)
@@ -59,7 +51,6 @@ trait ImplGraphMain extends ConsoleLogger {
 
 }
 
-object LinuxImplGraphMain extends ImplGraphMain {
-  val inFile = "input/2.6.28.6.dimacs"
-  val outFile = "input/2.6.28.6.implg"
-}
+object LinuxImplGraphMain extends LinuxProject with ImplGraphMain
+object BusyboxImplGraphMain extends BusyboxProject with ImplGraphMain
+
