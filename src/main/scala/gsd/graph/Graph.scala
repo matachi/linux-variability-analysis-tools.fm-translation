@@ -2,7 +2,7 @@ package gsd.graph
 
 case class Edge[V](source: V, target: V)
 
-abstract class Graph[V](val vertices: Set[V], val edges: EdgeMap[V])
+abstract class Graph[V] protected (val vertices: Set[V], val edges: EdgeMap[V])
         extends GraphWriter[V] with Graphviz[V] {
 
   def this(vs: Set[V], es: Iterable[Edge[V]]) =
@@ -30,11 +30,11 @@ abstract class Graph[V](val vertices: Set[V], val edges: EdgeMap[V])
   def ++(ts : Iterable[Edge[V]]): This = New(vertices, edges.toEdgeMap ++ ts)
   def --(ts : Iterable[Edge[V]]): This = New(vertices, edges.toEdgeMap -- ts)
 
-  def successors(v : V) = edges(v)
-  def predecessors(v : V) = revEdges(v)
+  def successors(v: V): Set[V] = edges(v)
+  def predecessors(v: V): Set[V] = revEdges(v)
 
   /** Vertices with no outgoing edges */
-  lazy val sinks = vertices.filter { successors(_).isEmpty }
+  lazy val sinks = vertices filter { successors(_).isEmpty }
 
   /** Vertices with no incoming edges */
   lazy val sources = vertices filter { v =>
@@ -44,16 +44,17 @@ abstract class Graph[V](val vertices: Set[V], val edges: EdgeMap[V])
   def toParseString(implicit toOrdered: V => Ordered[V]): String
 }
 
-case class DirectedGraph[V](vs: Set[V], es: EdgeMap[V]) extends Graph[V](vs,es)
-    with BFS[V] with Cliques[V] {
+class DirectedGraph[V] protected (vs: Set[V], es: EdgeMap[V])
+        extends Graph[V](vs,es) with BFS[V] with Cliques[V] {
 
   type This = DirectedGraph[V]
 
-  def New(newVs: Set[V], newEs: EdgeMap[V]) =
-    DirectedGraph(newVs,newEs)
-
   def this(vs: Set[V], es: Iterable[Edge[V]]) =
-    this(vs, toMultiMap(es))
+    this(vs, toMultiMap(es) withDefaultValue Set())
+
+  def New(newVs: Set[V], newEs: EdgeMap[V]) =
+    new DirectedGraph(newVs,newEs)
+
 
   def reverseEdges = New(vs, revEdges)
 
@@ -74,14 +75,14 @@ case class DirectedGraph[V](vs: Set[V], es: EdgeMap[V]) extends Graph[V](vs,es)
   def transitiveReduction: DirectedGraph[V] = {
     
     def visit[U](f: (V) => Iterable[V],
-                 toVisit: Iterable[V], visited: Set[V] = Set()): Set[V] =
+                 toVisit: List[V], visited: Set[V] = Set()): Set[V] =
       (toVisit dropWhile { visited contains _ }) match {
         case Nil => visited
-        case head::tail => visit(f, tail ++ f(head), visited + head)
+        case head::tail => visit(f, tail ::: f(head).toList, visited + head)
       }
 
     // Transitive successors
-    def tsuccessors(v: V): Set[V] = visit(successors, successors(v))
+    def tsuccessors(v: V): Set[V] = visit(successors, successors(v).toList)
 
     def _doVertex(v : V) =
       for (x <- tsuccessors(v) & (successors(v) flatMap tsuccessors))
@@ -130,8 +131,7 @@ trait GraphWriter[V] {
 trait Graphviz[T] {
   this: Graph[T] =>
 
-  def toGraphvizString(params: GraphvizParams = GraphvizParams())
-      (implicit toOrdered: T => Ordered[T]): String = {
+  def toGraphvizString(params: GraphvizParams = GraphvizParams()): String = {
   
     val sb = new StringBuilder
 
@@ -143,12 +143,13 @@ trait Graphviz[T] {
     val fmap = Map() ++ (vertices.zipWithIndex map { case (f,i) => (f, i+1) })
 
     //Vertices
-    for ((id, v) <- fmap.iterator.toList sortWith { case ((_,i),(_,j)) => i < j })
+    for ((id, v) <- fmap.iterator.toList sortWith
+            { case ((_,i),(_,j)) => i.toString < j.toString })
       sb append """%d [label="%s"]""".format(v, id.toString replace ("\"", "\\\"")) append "\n"
 
     for {
-      (src, targets) <- edges.toList sortWith { case ((x,_),(y,_)) => x < y }
-      tar <- targets.toList sortWith { _ < _ }
+      (src, targets) <- edges.toList sortWith { case ((x,_),(y,_)) => x.toString < y.toString }
+      tar <- targets.toList sortWith { _.toString < _.toString }
     } {
       sb append fmap(src) append "->" append fmap(tar) append "\n"
     }

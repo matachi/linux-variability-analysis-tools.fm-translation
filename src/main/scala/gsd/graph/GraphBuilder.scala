@@ -3,10 +3,10 @@ package gsd.graph
 object GraphBuilder {
 
   def mkDirectedGraph[T](): DirectedGraph[T] =
-    DirectedGraph(Set(), Map())
+    new DirectedGraph(Set[T](), Nil)
 
   def mkDirectedGraph[T](vertices: Iterable[T]): DirectedGraph[T] =
-    DirectedGraph(Set() ++ vertices, Map())
+    new DirectedGraph(Set() ++ vertices, Nil)
 
   def mkDirectedGraph[T](edges: (T,T)*): DirectedGraph[T] =
     new DirectedGraph (
