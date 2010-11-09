@@ -20,7 +20,9 @@ trait ImplBuilder extends SATBuilder {
    * @return A vars x vars array where the 0th index is unused since
    * we ignore the 0th variable in the SAT solver.
    */
-  def mkDoneArray = {
+  def mkDoneArray(additional: Iterable[Int]) = {
+    log("[DEBUG] Adding %d additional ignored variables".format(additional.size))
+
     val arr = Array.ofDim[Boolean](size + 1, size + 1)
 
     //Initialize self-tests to 'done'
@@ -41,6 +43,14 @@ trait ImplBuilder extends SATBuilder {
       arr(g)(i) = true
       arr(i)(g) = true
     }
+
+    for {
+      i <- additional
+      j <- 0 to size
+    } {
+      arr(i)(j) = true
+      arr(j)(i) = true
+    }
     arr
   }
 
@@ -57,11 +67,16 @@ trait ImplBuilder extends SATBuilder {
    * satisfiable after a check to implication, then we examine the resulting
    * model. In that model, if there exists i = TRUE, and j = FALSE, then we
    * know that i does NOT imply j. Look at the truth table for implication.
+   *
+   * @param varMap mapping from variable to its identifier
+   * @param additional any additional variables to ignore
    */
   def mkImplicationGraph[T](
           varMap: Map[Int,T] = Map[Int,Int]() withDefault { v => v },
-          done: Array[Array[Boolean]] = mkDoneArray)
+          additional: Iterable[Int] = Nil)
       : DirectedGraph[T] = {
+
+    val done = mkDoneArray(additional)
 
     def markNonImplications =
       for {
@@ -86,7 +101,7 @@ trait ImplBuilder extends SATBuilder {
     }
     Console.println("Done!")
 
-    new DirectedGraph(Set() ++ (realVars map varMap.apply), result)
+    new DirectedGraph(((realVars -- additional) map varMap.apply).toSet, result)
 
   }
 
