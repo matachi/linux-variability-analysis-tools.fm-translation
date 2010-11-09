@@ -57,8 +57,9 @@ object ImplGraphMain extends ConsoleLogger {
     out.println(g.toParseString)
     out.close
 
+    log("Writing transitively reduced implication graph...")
     val graphviz = new PrintStream(p.graphvizFile)
-    graphviz.println(g.toGraphvizString())
+    graphviz.println(g.collapseCliques.transitiveReduction.toGraphvizString())
     graphviz.close
   }
 

@@ -23,16 +23,16 @@ trait Cliques[T] {
 
   def collapseCliques: DirectedGraph[Set[T]] = {
     val vertices = findCliques
-    val vertexMap = Map() ++
-            (for (c <- vertices; v <- c) yield v -> c) withDefault { Set(_) }
+    val vertexMap =
+      (for (c <- vertices; v <- c) yield v -> c).toMap withDefault { Set(_) }
 
     val edges = vertices.flatMap { set =>
       set flatMap { v =>
-        (successors(v).map { vertexMap } - set).map { Edge(set, _) }
+        ((successors(v) map vertexMap.apply) - set).map { Edge(set, _) }
       }
     }
 
-    DirectedGraph[Set[T]](vertices.toSet, toMultiMap(edges))
+    new DirectedGraph[Set[T]](vertices.toSet, edges)
   }
 
 
@@ -61,7 +61,7 @@ object Cliques {
                   tar <- tarSet
                 } yield Edge(src, tar))
 
-      DirectedGraph[T](vs, toMultiMap(es))
+      new DirectedGraph[T](vs, es)
     }
   }
 
