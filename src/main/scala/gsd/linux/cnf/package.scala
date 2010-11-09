@@ -30,8 +30,8 @@ package object cnf {
   }
 
   implicit def toRichBExprList(in: List[BExpr]) = new {
-    def toCNF(idMap: Map[String, Int]): CNF =
-      in flatMap { CNFBuilder.toCNF(_, idMap) }
+    def toCNF(idMap: Map[String, Int]): CNF = 
+      in flatMap { e => CNFBuilder.toCNF(e, idMap) }
   }
 
 }

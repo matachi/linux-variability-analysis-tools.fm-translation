@@ -39,8 +39,11 @@ class SATBuilder(cnf: CNF, val size: Int, val genVars: Set[Int] = Set()) extends
   def this(exprs: Iterable[BExpr], idMap: Map[String, Int], gens: Set[String]) =
     this(exprs flatMap { CNFBuilder.toCNF(_, idMap) }, idMap.size, gens map idMap.apply)
 
+  log("[DEBUG] %d generated variables".format(genVars.size))
+
   val genArray: Array[Boolean] = {
-    val result = new Array[Boolean](size + 1)
+    val result = Array.fill[Boolean](size + 1)(false)
+    result(0) = true
     genVars foreach { result(_) = true }
     result
   }
@@ -53,7 +56,7 @@ class SATBuilder(cnf: CNF, val size: Int, val genVars: Set[Int] = Set()) extends
   addCNF(cnf, size)
 
   def addCNF(cnf: CNF, size: Int) = {
-    log("# of Vars: " + size)
+    log("[DEBUG] %d variables".format(size))
     solver.newVar(size)
 
     //FIXME workaround for free variables not appearing in models
