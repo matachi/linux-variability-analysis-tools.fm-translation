@@ -77,13 +77,14 @@ trait ImplBuilder extends SATBuilder {
       i <- 1 to size
       j <- 1 to size if !done(i)(j)
     } {
-      log("[DEBUG] IG: " + i + "/" + size + " " + j + "/" + size)
+      Console.print("IG: %5d / %5d | %5d\r".format(i, size, j)) //Write on same line
       if (implication(i,j)) {
         result += Edge(varMap(i), varMap(j))
         done(i)(j) = true
       }
       else markNonImplications
     }
+    Console.println("Done!")
 
     new DirectedGraph(Set() ++ (realVars map varMap.apply), result)
 

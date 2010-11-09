@@ -1,15 +1,26 @@
 package gsd.linux.tools
 
-trait Project {
-  val inFile: String
-  val outFile: String
+// TODO maybe move this to a package object
+object Projects {
+  val projects = Map(
+    "linux" -> LinuxProject,
+    "busybox" -> BusyboxProject
+  )
 }
 
-trait LinuxProject extends Project {
-  val inFile = "input/2.6.28.6-edited.exconfig"
-  val outFile = "input/2.6.28.6.dimacs"
+trait Project {
+  val base: String
+
+  lazy val exconfigFile: String = base + ".exconfig"
+  lazy val dimacsFile: String = base + ".dimacs"
+  lazy val implgFile: String = base + ".implg"
 }
-trait BusyboxProject extends Project {
-  val inFile = "input/busybox-1.17.2.exconfig"
-  val outFile = "input/busybox-1.17.2.dimacs"
+
+object LinuxProject extends Project {
+  val base = "input/2.6.28.6"
+  override lazy val exconfigFile = "input/2.6.28.6-edited.exconfig"
+}
+
+object BusyboxProject extends Project {
+  val base = "input/busybox-1.17.2"
 }

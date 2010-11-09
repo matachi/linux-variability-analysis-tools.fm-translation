@@ -60,14 +60,12 @@ object CNFBuilder {
   /**
    * @param idMap Maps identifiers in the expression to an integer
    */
-  def toCNF(e: BExpr, idMap: collection.Map[String, Int]) = {
-    println("toCNF: " + e)
+  def toCNF(e: BExpr, idMap: collection.Map[String, Int]) =
     rewrite(sIffRule <* sImpliesRule)(e)
         .simplify
         .splitConjunctions
         .flatMap { distribute }
         .map { toClause(_, idMap) }
-  }
 
 }
 

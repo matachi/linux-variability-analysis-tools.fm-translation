@@ -5,13 +5,17 @@ import util.logging.ConsoleLogger
 import gsd.linux.cnf.{ImplBuilder, SATBuilder, DimacsReader}
 import gsd.linux.{KConfigParser, TFMTranslation}
 
-trait CNFMain extends ConsoleLogger with Project {
+import Projects._
+
+object CNFMain extends ConsoleLogger {
 
   import gsd.linux.cnf._
 
   def main(args: Array[String]) {
+    val p = projects(args.head)
+
     log("Parsing Kconfig...")
-    val ck = KConfigParser.parseKConfigFile(inFile)
+    val ck = KConfigParser.parseKConfigFile(p.exconfigFile)
 
     log("Converting to abstract syntax...")
     val ak = ck.toAbstractKConfig
@@ -20,22 +24,23 @@ trait CNFMain extends ConsoleLogger with Project {
     val trans = new TFMTranslation(ak) with ConsoleLogger
     val exprs = trans.translate
 
-    val out = new PrintStream(outFile)
-    out.println(exprs.toCNF(trans.idMap).toDimacs(trans.varMap))
+    val out = new PrintStream(p.dimacsFile)
+    val idMap = trans.idMap
+    println("# of generated: " + trans.generated.size)
+    out.println(exprs.toCNF(idMap).toDimacs(trans.varMap, trans.generated.toSet map idMap.apply))
     out.close
   }
 
 }
 
-object LinuxCNFMain extends LinuxProject with CNFMain
-object BusyboxCNFMain extends BusyboxProject with CNFMain 
-
-trait ImplGraphMain extends ConsoleLogger with Project {
+object ImplGraphMain extends ConsoleLogger {
 
   def main(args: Array[String]) {
+    val p = projects(args.head)
+
     log("Reading Dimacs File...")
-    val header = DimacsReader.readHeaderFile(inFile)
-    val dimacs = DimacsReader.readFile(inFile)
+    val header = DimacsReader.readHeaderFile(p.dimacsFile)
+    val dimacs = DimacsReader.readFile(p.dimacsFile)
 
     log("Initializing SAT solver...")
     val sat = new SATBuilder(dimacs.cnf, dimacs.numVars, header.generated)
@@ -44,13 +49,11 @@ trait ImplGraphMain extends ConsoleLogger with Project {
     log("Building implication graph...")
     val g = sat.mkImplicationGraph(header.varMap)
 
-    val out = new PrintStream(outFile)
+    val out = new PrintStream(p.implgFile)
     out.println(g.toParseString)
     out.close
   }
 
 }
 
-object LinuxImplGraphMain extends LinuxProject with ImplGraphMain
-object BusyboxImplGraphMain extends BusyboxProject with ImplGraphMain
 

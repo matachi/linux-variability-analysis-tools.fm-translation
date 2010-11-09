@@ -165,11 +165,11 @@ class TFMTranslation(k: AbstractKConfig) {
     def allIds = (1 to i).map { prefix + _ }.toList
   }
 
-  def generated: Set[String] =
-    Set() ++ IdGen.allIds
+  def generated: List[String] =
+    (IdGen.allIds map { _ + "_1" }) ::: (IdGen.allIds map { _ + "_2"})
 
-  def identifiers: Set[String] =
-    Set() ++ k.identifiers ++ IdGen.allIds
+  def identifiers: List[String] =
+    k.identifiers.toList ::: IdGen.allIds
   
   def size: Int = identifiers.size
 
@@ -178,7 +178,7 @@ class TFMTranslation(k: AbstractKConfig) {
    */
   def idMap: Map[String, Int] =
     Map() ++ {
-      (identifiers.toList flatMap
+      (identifiers flatMap
               { id => List(id + "_1", id + "_2") }).zipWithIndex map
                      { case (id,i) => (id, i + 1) }
     }
