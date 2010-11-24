@@ -38,6 +38,11 @@
             <name>Scala-tools Maven2 Repository</name>
             <url>http://scala-tools.org/repo-releases</url>
         </repository>
+        <repository>
+            <id>scargRepo</id>
+            <name>scarg repo</name>
+            <url>http://xfire.github.com/scarg/maven-repo/</url>
+        </repository>
     </repositories>
 
     <pluginRepositories>
