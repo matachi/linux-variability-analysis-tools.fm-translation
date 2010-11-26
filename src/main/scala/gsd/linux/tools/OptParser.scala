@@ -115,7 +115,7 @@ class OptParser extends ArgBuilder {
   case class UnknownArgsException(args: List[String])
           extends ParseException("Unknown arguments: %s".format(args.mkString(" ")))
   case class ConstraintsException(constraints: List[ArgExp])
-          extends ParseException("Unsatisfied Constraints: %s".format(args.mkString(" ")))
+          extends ParseException("Unsatisfied Constraints: %s".format(constraints.mkString(" ")))
   sealed abstract class ParseException(msg: String)
           extends Exception(msg)
 }

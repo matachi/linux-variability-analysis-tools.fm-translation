@@ -109,6 +109,11 @@
             <version>2.1.1</version>
         </dependency>
         <dependency>
+            <groupId>org.clapper</groupId>
+            <artifactId>argot_2.8.0</artifactId>
+            <version>0.2</version>
+        </dependency>
+        <dependency>
             <groupId>javabdd</groupId>
             <artifactId>javabdd</artifactId>
             <version>1.0b2</version>
