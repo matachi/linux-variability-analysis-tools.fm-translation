@@ -14,17 +14,14 @@ object CNFMain extends ConsoleLogger {
   def main(args: Array[String]) {
     val p = projects(args.head)
 
-    log("Parsing Kconfig...")
-    val ck = KConfigParser.parseKConfigFile(p.exconfigFile)
-
     log("Converting to abstract syntax...")
-    val ak = ck.toAbstractKConfig
+    val ak = p.exconfig.toAbstractKConfig
 
     log("Translating to tristate...")
     val trans = new TFMTranslation(ak) with ConsoleLogger
     val exprs = trans.translate
 
-    val out = new PrintStream(p.dimacsFile)
+    val out = new PrintStream("output/" + p.name + ".dimacs")
     val idMap = trans.idMap
     println("# of generated: " + trans.generated.size)
     out.println(exprs.toCNF(idMap).toDimacs(trans.varMap, trans.generated.toSet map idMap.apply))
