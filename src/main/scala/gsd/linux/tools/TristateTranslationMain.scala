@@ -18,20 +18,40 @@
  * <http://www.gnu.org/licenses/>.
  */
 
-package gsd.linux
+package gsd.linux.tools
 
-import org.junit.Test
+import gsd.linux._
 
-class TseitinTest extends Tseitin {
+import java.io.PrintStream
 
-  implicit def toB2Id(s: String) = BId(s)
+/**
+ * Outputs the boolean translation of a Kconfig extract. 
+ *
+ * @author Steven She (shshe@gsd.uwaterloo.ca)
+ */
+object TristateTranslationMain {
 
-  @Test def testNot {
-    assert(transform(!"A") == List(BId("x1"), "x1" iff !"x2", "x2" iff "A"))
+  def main(args: Array[String]) : Unit = {
+    if (args.size == 0) {
+      System.err.println(
+        "TristateTranslationMain <Kconfig-extract-file> [<output-file>]")
+      System exit 1
+    }
+
+    val out = if (args.size > 1) new PrintStream(args(1))
+                 else System.out
+
+    val k = KConfigParser.parseKConfigFile(args head)
+
+    //First output identifiers
+    for (id <- k.identifiers) out.println("@ " + id)
+
+    val trans = new TristateTranslation(k)
+    val exprs = trans.translate
+
+    for (id <- trans.generated) out.println("$ " + id)
+    for (e  <- exprs) out.println(e)
+
+    out.close
   }
-
-  @Test def testAtom {
-    assert(transform("A") == List(BId("x1"), "x1" iff "A"))
-  }
-
 }

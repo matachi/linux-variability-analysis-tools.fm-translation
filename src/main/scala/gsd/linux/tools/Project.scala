@@ -4,7 +4,8 @@ import gsd.graph.DirectedGraph
 import gsd.linux.cnf.DimacsReader
 import gsd.linux.cnf.DimacsReader.{DimacsHeader, DimacsProblem}
 import java.io.File
-import gsd.linux.{KConfigParser, ConcreteKConfig}
+import gsd.linux.{BExprParser, BExpr, KConfigParser, ConcreteKConfig}
+import gsd.linux.BExprParser.BExprResult
 // TODO maybe move this to a package object
 object Projects {
 
@@ -21,6 +22,7 @@ trait Project {
   val name: String
 
   def exconfig: ConcreteKConfig
+  def bool: BExprResult
   def dimacs: DimacsProblem
   def header: DimacsHeader
   def implg: DirectedGraph[String]
@@ -28,12 +30,18 @@ trait Project {
 }
 class FileBasedProject(val name: String,
                        val exconfigFile: Option[String] = None,
+                       val boolFile: Option[String] = None,
                        val dimacsFile: Option[String] = None,
                        val implgFile: Option[String] = None) extends Project {
 
   override lazy val exconfig = exconfigFile match {
     case Some(f) => KConfigParser.parseKConfigFile(f)
     case None => error("exconfig file not specified in project")
+  }
+
+  override lazy val bool = boolFile match {
+    case Some(f) => BExprParser.parseBExprFile(f)
+    case None => error("boolean expressions file not specified in project")
   }
 
   override lazy val dimacs = dimacsFile match {
@@ -56,6 +64,7 @@ import Projects._
 object BusyboxProject extends FileBasedProject(
   "busybox-1.17.2",
   Some(busyboxBase + ".exconfig"),
+  Some(busyboxBase + ".bool"),
   Some(busyboxBase + ".dimacs"),
   Some(busyboxBase + ".implg")
   )
@@ -63,6 +72,7 @@ object BusyboxProject extends FileBasedProject(
 object LinuxProject extends FileBasedProject(
   "linux-2.6.28.6",
   Some("input/2.6.28.6-edited.exconfig"),
+  Some(linuxBase + ".bool"),
   Some(linuxBase + ".dimacs"),
   Some(linuxBase + ".implg")
   )

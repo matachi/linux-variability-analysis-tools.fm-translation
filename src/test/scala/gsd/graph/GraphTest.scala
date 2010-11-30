@@ -8,8 +8,8 @@ import org.junit.Test
 class GraphTest extends AssertionsForJUnit {
 
   @Test def graphBuilder {
-    expect(DirectedGraph(Set(), Map()))(g(Nil))
-    expect(DirectedGraph(Set(1,2,3), Map()))(g(List(1,2,3)))
+    expect(new DirectedGraph[Int](Set[Int](), Nil))(g(Nil))
+    expect(new DirectedGraph(Set(1,2,3), Nil))(g(List(1,2,3)))
     expect(new DirectedGraph(Set(1,2,3),
       List(1->2, 2->3, 3->1) map { Function.tupled(Edge.apply) }))(g(1->2,2->3,3->1))
   }
@@ -22,7 +22,7 @@ class GraphTest extends AssertionsForJUnit {
   }
 
   @Test def removeEdge {
-    expect(g(List(1,2,3), 1->2))(g(1->2, 2->3) - (2->3))
+    expect(g(List(1,2,3), 1->2))(g(List(1,2,3), 1->2, 2->3) - (2->3))
     expect(g(List(1,2)))(g(List(1,2)) - (1->2))
   }
 

@@ -38,11 +38,6 @@
             <name>Scala-tools Maven2 Repository</name>
             <url>http://scala-tools.org/repo-releases</url>
         </repository>
-        <repository>
-            <id>scargRepo</id>
-            <name>scarg repo</name>
-            <url>http://xfire.github.com/scarg/maven-repo/</url>
-        </repository>
     </repositories>
 
     <pluginRepositories>
@@ -83,6 +78,30 @@
                     <scalaVersion>${scala.version}</scalaVersion>
                 </configuration>
             </plugin>
+            
+            <!-- assembles scripts -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>appassembler-maven-plugin</artifactId>
+                <version>1.1</version>
+                <configuration>
+                    <extraJvmArguments>-Xss4096k</extraJvmArguments>
+                    <programs>
+                        <program>
+                            <mainClass>gsd.linux.tools.CNFMain</mainClass>
+                            <name>CNFMain</name>
+                        </program>
+                        <program>
+                            <mainClass>gsd.linux.tools.ImplGraphMain</mainClass>
+                            <name>ImplGraphMain</name>
+                        </program>
+                        <program>
+                            <mainClass>gsd.linux.tools.TristateTranslationMain</mainClass>
+                            <name>TristateTranslationMain</name>
+                        </program>
+                    </programs>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
@@ -109,11 +128,6 @@
             <version>2.1.1</version>
         </dependency>
         <dependency>
-            <groupId>org.clapper</groupId>
-            <artifactId>argot_2.8.0</artifactId>
-            <version>0.2</version>
-        </dependency>
-        <dependency>
             <groupId>javabdd</groupId>
             <artifactId>javabdd</artifactId>
             <version>1.0b2</version>
@@ -125,6 +139,11 @@
             <artifactId>scalatest</artifactId>
             <version>1.2</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.clapper</groupId>
+            <artifactId>argot_2.8.0</artifactId>
+            <version>0.2</version>
         </dependency>
         <dependency>
             <groupId>org.scala-tools.testing</groupId>
