@@ -44,8 +44,8 @@ abstract class Graph[V] protected (val vertices: Set[V], val edges: EdgeMap[V])
   def toParseString(implicit toOrdered: V => Ordered[V]): String
 }
 
-class DirectedGraph[V] protected (vs: Set[V], es: EdgeMap[V])
-        extends Graph[V](vs,es) with BFS[V] with Cliques[V] {
+case class DirectedGraph[V] protected (vs: Set[V], es: EdgeMap[V])
+           extends Graph[V](vs,es) with BFS[V] with Cliques[V] {
 
   type This = DirectedGraph[V]
 

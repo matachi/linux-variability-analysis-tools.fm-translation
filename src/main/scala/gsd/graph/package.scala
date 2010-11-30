@@ -27,8 +27,9 @@ package object graph {
     def -(t: Edge[T]): EdgeMap[T] = t match {
       case Edge(u,v) => map.get(u) match {
         case Some(vs) if vs == Set(v) => map - u
-        case Some(vs) => map - u + Tuple2(u, vs - v)
-        case None => map
+        case Some(vs) if vs == Set() => map
+        case Some(vs) => map - u + ((u, vs - v))
+        case None  => map
       }
     }
 

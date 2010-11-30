@@ -33,8 +33,7 @@ class ImplGraphTest extends AssertionsForJUnit {
     val cnf = mkCNF((-1,2), (-2,3), (-3,1))
     val sat = new SATBuilder(cnf,3) with ImplBuilder with ImplBuilderStats
     expect(g(1->2,1->3,2->3,2->1,3->1,3->2))(sat.mkImplicationGraph())
-    expect(3)(sat.numImpl)
-    expect(3)(sat.numImplCalls)
+    expect(6)(sat.numImpl)
   }
 
   @Test def genVars1 {

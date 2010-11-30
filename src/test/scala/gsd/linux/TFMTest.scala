@@ -8,11 +8,17 @@ import java.io.PrintStream
 
 class TFMTest extends AssertionsForJUnit {
 
+  def exprs(in: String): List[BExpr] = {
+    val ak = KConfigParser.parseKConfig(in).toAbstractKConfig
+    val trans = new TristateTranslation(ak)
+    trans.translate
+  }
+
   def allConfigs(in: String): List[List[(String,Int)]] = {
     val ak = KConfigParser.parseKConfig(in).toAbstractKConfig
-    val trans = new TFMTranslation(ak)
+    val trans = new TristateTranslation(ak)
     val exprs = trans.translate
-    val sat = new SATBuilder(exprs, trans.idMap, Set[String]())
+    val sat = new SATBuilder(exprs, trans.idMap, trans.generated.toSet)
     sat.allConfigurations map trans.interpret
   }
 
@@ -46,7 +52,9 @@ class TFMTest extends AssertionsForJUnit {
       }
       """
 
-    assert(allConfigs(in).size == 2)
+    println(exprs(in))
+
+    expect(2)(allConfigs(in).size)
   }
 
   @Test def tristate {
@@ -55,7 +63,7 @@ class TFMTest extends AssertionsForJUnit {
         prompt "..." if []
       }"""
 
-    assert(allConfigs(in).size === 3)
+    expect(3)(allConfigs(in).size)
   }
 
 
@@ -283,48 +291,4 @@ class TFMTest extends AssertionsForJUnit {
 
 }
 
-/**
- * Needs big stack size, -Xss 4096K seems to work
- * Needs bigger heap size for scala 2.8.0 when building Done array, -Xmx1g
- */
-class LinuxTest extends AssertionsForJUnit {
-
-  import KConfigParser._
-
-  /**
-   * FIXME
-   * Needs a big stack size because I used kiama to retrieve all identifiers
-   * in AbstractKConfig. 
-   */
-  @Test def linux {
-    println("Parsing Kconfig...")
-    val ck = parseKConfigFile("input/2.6.28.6-edited.exconfig")
-
-    println("Converting to abstract syntax...")
-    val ak = ck.toAbstractKConfig
-
-    println("Translating to tristate...")
-    val trans = new TFMTranslation(ak) with ConsoleLogger
-    val exprs = trans.translate
-
-    val out = new PrintStream("2.6.28.6.dimacs")
-    out.println(exprs.toCNF(trans.idMap).toDimacs(trans.varMap))
-    out.close
-    
-
-//    println("Converting to CNF...")
-//    val sat = new SATBuilder(exprs, trans.idMap, trans.generated)
-//                with ImplBuilder with ConsoleLogger
-//
-//    println("Running SAT...")
-//    println("Is SAT? " + sat.isSatisfiable)
-//
-//    println("Building implication graph...")
-//    val g = sat.mkImplicationGraph(trans.varMap)
-//
-//    val out = new PrintStream("2.6.28.6.implg")
-//    out.println(g.toParseString)
-  }
-
-}
 
