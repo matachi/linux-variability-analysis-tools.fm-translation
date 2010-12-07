@@ -22,27 +22,62 @@ package gsd.linux.tools
 
 import gsd.linux._
 
-import java.io.PrintStream
+import java.io.{InputStreamReader, PrintStream}
+import org.clapper.argot.{ArgotConverters, ArgotUsageException}
+import util.logging.ConsoleLogger
 
 /**
  * Outputs the boolean translation of a Kconfig extract. 
  *
  * @author Steven She (shshe@gsd.uwaterloo.ca)
  */
-object TristateTranslationMain {
+object TristateTranslationMain extends ArgotUtil with ConsoleLogger {
 
-  def main(args: Array[String]) : Unit = {
-    if (args.size == 0) {
-      System.err.println(
-        "TristateTranslationMain <Kconfig-extract-file> [<output-file>]")
-      System exit 1
+  val name = "TristateTranslationMain"
+
+  import ArgotConverters._
+
+  val inParam = parser.parameter[String](
+    "in-file", "input Kconfig extract (.exconfig) file, stdin if not specified.", true)
+
+  val outParam = parser.parameter[String](
+    "out-file", "output file to write boolean expressions, stdout if not specified.", true)
+
+  def main(args: Array[String]) {
+
+    try {
+      parser.parse(args)
+
+      val k =
+      (pOpt.value, inParam.value) match {
+        case (Some(_), Some(_)) =>
+          parser.usage("Either a project (-p) is specified or input & output parameters are used.")
+
+        case (Some(p), None) => p.exconfig
+
+        case (None, Some(f)) =>
+          KConfigParser.parseKConfigFile(f)
+
+        case (None, None) =>
+          log("Using stdin as input...")
+          KConfigParser.parseKConfig(new InputStreamReader(System.in))
+      }
+
+      val output =
+      (pOpt.value, outParam.value) match {
+        case (Some(p), None) => new PrintStream(p.boolFile.get)
+        case (None, Some(f)) => new PrintStream(f)
+        case _ => System.out
+      }
+
+      execute(k, output)
     }
+    catch {
+      case e: ArgotUsageException => println(e.message)
+    }
+  }
 
-    val out = if (args.size > 1) new PrintStream(args(1))
-                 else System.out
-
-    val k = KConfigParser.parseKConfigFile(args head)
-
+  def execute(k: ConcreteKConfig, out: PrintStream) {
     //First output identifiers
     for (id <- k.identifiers) out.println("@ " + id)
 
@@ -51,7 +86,5 @@ object TristateTranslationMain {
 
     for (id <- trans.generated) out.println("$ " + id)
     for (e  <- exprs) out.println(e)
-
-    out.close
   }
 }

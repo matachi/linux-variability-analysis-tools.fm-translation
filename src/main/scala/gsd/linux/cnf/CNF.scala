@@ -64,6 +64,7 @@ object CNFBuilder {
     rewrite(sIffRule <* sImpliesRule)(e)
         .simplify
         .splitConjunctions
+        .filter { _ != BTrue }
         .flatMap { distribute }
         .map { toClause(_, idMap) }
 

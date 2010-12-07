@@ -22,11 +22,20 @@ package gsd.linux.cnf
 import org.sat4j.minisat.SolverFactory
 
 import org.sat4j.core.VecInt
-import org.sat4j.specs.ContradictionException
-import org.sat4j.tools.ModelIterator
 import collection.mutable.ListBuffer
 import gsd.linux.BExpr
 import util.logging.Logged
+import org.sat4j.specs.{IConstr, ISolver, ContradictionException}
+
+abstract trait SATSolver[T <: ISolver] {
+  
+  val solver: T = newSolver
+  protected def newSolver: T
+
+  def toVecInt(lits: List[Int]): VecInt =
+    new VecInt(lits.toArray)
+}
+
 
 /**
  * WARNING: The SAT solver has its own internal state, be careful about
@@ -34,7 +43,8 @@ import util.logging.Logged
  *
  * @author Steven She (shshe@gsd.uwaterloo.ca)
  */
-class SATBuilder(cnf: CNF, val size: Int, val genVars: Set[Int] = Set()) extends Logged {
+class SATBuilder(cnf: CNF, val size: Int, val genVars: Set[Int] = Set())
+        extends SATSolver[ISolver] with Logged {
 
   def this(exprs: Iterable[BExpr], idMap: Map[String, Int], gens: Set[String]) =
     this(exprs flatMap { CNFBuilder.toCNF(_, idMap) }, idMap.size, gens map idMap.apply)
@@ -49,67 +59,63 @@ class SATBuilder(cnf: CNF, val size: Int, val genVars: Set[Int] = Set()) extends
   }
 
   val realVars: Set[Int] =
-    Set() ++ (1 to size) -- (genArray.zipWithIndex filter { _._1 } map { _._2 })
+    (1 to size).toSet -- (genArray.zipWithIndex filter { _._1 } map { _._2 })
 
-  val solver = newSolver
-  protected def newSolver = new ModelIterator(SolverFactory.newDefault)
-  addCNF(cnf, size)
+  protected def newSolver: ISolver =
+    SolverFactory.newDefault
 
-  def addCNF(cnf: CNF, size: Int) = {
-    log("[DEBUG] %d variables".format(size))
-    solver.newVar(size)
+  init
+
+  private def init {
+    log("[DEBUG] SAT solver has %d variables".format(size))
+    solver newVar size
 
     //FIXME workaround for free variables not appearing in models
     for (i <- 1 to size)
       addClause(List(i, -i))
-    
-    cnf foreach addClause
+
+    addCNF(cnf)
   }
 
-  def addClause(clause: Clause): Unit =
+  def addCNF(cnf: CNF): Iterable[IConstr] =
+    cnf flatMap addClause
+
+  def addClause(clause: Clause): Option[IConstr] =
     try {
       assert(!clause.contains(0), "Clause cannot contain 0")
       val vi = toVecInt(clause)
-      solver.addClause(vi)
+      val res = solver.addClause(vi)
       vi.clear
+
+      if (res != null) {
+        constrToClause(res, clause)
+        Some(res)
+      }
+      else None
     }
     catch {
       case e: ContradictionException => throw e
     }
 
-  def allConfigurations(): List[Array[Int]] =
-    allConfigurations(Nil)
+  def removeConstr(c: IConstr) = {
+    assert(c != null, "cannot remove a constraint that is null!")
+    solver.removeConstr(c)
+  }
 
   /**
-   * TODO make this into a lazy Stream
+   * Don't store constraint to clause mapping in base implementation
    */
-  def allConfigurations(assump: List[Int]): List[Array[Int]] = {
-    val result = new ListBuffer[Array[Int]]
-    try {
-      while (solver.isSatisfiable(toVecInt(assump))) {
-        val model = solver.model
-//        println(Arrays.toString(model))
-        result += model
-      }
-    }
-    catch {
-      case e: ContradictionException => error(e.getMessage)//do nothing
-      case e => error("what?" + e)
-    }
-    result.toList
-  }
+  protected def constrToClause(constr: IConstr, clause: Clause): Unit = {}
 
   def isSatisfiable = solver.isSatisfiable
   def isSatisfiable(assump: List[Int]) =
     solver.isSatisfiable(toVecInt(assump))
 
-  def reset = solver.reset
+  def reset =
+    solver.reset
   
   def reload {
     reset
-    addCNF(cnf, size)
+    init
   }
-
-  def toVecInt(lits: List[Int]): VecInt =
-    new VecInt(lits.toArray)
 }

@@ -18,7 +18,7 @@ class TFMTest extends AssertionsForJUnit {
     val ak = KConfigParser.parseKConfig(in).toAbstractKConfig
     val trans = new TristateTranslation(ak)
     val exprs = trans.translate
-    val sat = new SATBuilder(exprs, trans.idMap, trans.generated.toSet)
+    val sat = new SATBuilder(exprs, trans.idMap, trans.generated.toSet) with ModelIteratorSupport
     sat.allConfigurations map trans.interpret
   }
 
@@ -261,21 +261,21 @@ class TFMTest extends AssertionsForJUnit {
 
   @Test def allConfigurations {
     {
-      val sat = new SATBuilder(List(List(1,2,3), List(-1,-2,-3)), 3)
+      val sat = new SATBuilder(List(List(1,2,3), List(-1,-2,-3)), 3) with ModelIteratorSupport
       assert(sat.allConfigurations.size === 6)
     }
     {
-      val sat = new SATBuilder(List(List(1,-1)), 1)
+      val sat = new SATBuilder(List(List(1,-1)), 1) with ModelIteratorSupport
       assert(sat.allConfigurations.size === 2)
     }
     {
-      val sat = new SATBuilder(Nil, 1)
+      val sat = new SATBuilder(Nil, 1) with ModelIteratorSupport
       assert(sat.allConfigurations.size === 2)
     }
   }
 
   @Test def allConfigurationsWithAssumptions {
-    val sat = new SATBuilder(List(List(1,2,3), List(-1,-2,-3)), 3)
+    val sat = new SATBuilder(List(List(1,2,3), List(-1,-2,-3)), 3) with ModelIteratorSupport
     assert(sat.allConfigurations(List(1)).size === 3)
     sat.reload
     assert(sat.allConfigurations(List(2)).size === 3)

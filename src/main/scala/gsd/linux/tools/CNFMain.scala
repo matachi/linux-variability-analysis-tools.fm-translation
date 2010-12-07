@@ -12,13 +12,8 @@ object CNFMain extends ArgotUtil with ConsoleLogger {
 
   import gsd.linux.cnf._
   import ArgotConverters._
-  import Projects._
 
-  val parser = new ArgotParser("CNFMain")
-
-  val pOpt = parser.option[FileBasedProject](
-    List("p", "project"), "pro",
-      "supported projects: %s".format(projects.keySet.mkString(",")))
+  val name = "CNFMain"
 
   val inParam = parser.parameter[String](
     "in-file", "input file containing boolean expressions, stdin if not specified.", true)
@@ -41,6 +36,7 @@ object CNFMain extends ArgotUtil with ConsoleLogger {
           case (Some(p), None) => p.bool
 
           case (None, None) =>
+            log("Using stdin for input...")
             BExprParser.parseBExpr(
               PagedSeq fromReader new InputStreamReader(System.in))
         }

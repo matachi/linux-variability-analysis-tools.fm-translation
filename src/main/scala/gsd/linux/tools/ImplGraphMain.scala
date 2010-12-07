@@ -4,7 +4,6 @@ import util.logging.ConsoleLogger
 import java.io.PrintStream
 
 import gsd.linux.cnf.DimacsReader.{DimacsHeader, DimacsProblem}
-import gsd.graph.DirectedGraph
 
 import org.clapper.argot._
 import gsd.linux.cnf.{DimacsReader, ImplBuilder, SATBuilder}
@@ -12,22 +11,18 @@ import java.util.Scanner
 
 object ImplGraphMain extends ArgotUtil with ConsoleLogger {
 
-  import Projects._
+  val name = "ImplGraphMain"
+
   import ArgotConverters._
 
-  val parser = new ArgotParser("ImplGraphMain")
-
-  val pOpt = parser.option[FileBasedProject](List("p", "project"), "p",
-    "supported projects: %s".format(projects.keySet.mkString(",")))
-
-  val inParam = parser.parameter[String]("in-file", 
-    "input file containing CNF in dimacs format, stdin if not specified", false)
+  val inParam = parser.parameter[String]("in-file",
+    "input file containing CNF in dimacs format, stdin if not specified", true)
 
   val outParam = parser.parameter[String]("out-file",
-    "output file for the implication graph, stdout if not specified", false)
+    "output file for the implication graph, stdout if not specified", true)
 
-  val genFlag = parser.flag[Boolean]("g",
-    true, "do NOT consider variables that end with '_2' as generated")
+  val genFlag = parser.flag[Boolean](List("g"),
+    "do NOT consider variables that end with '_2' as generated")
 
   def main(args: Array[String]) {
 
@@ -45,11 +40,12 @@ object ImplGraphMain extends ArgotUtil with ConsoleLogger {
             (DimacsReader.readHeaderFile(f), DimacsReader.readFile(f))
 
           case (None, None) =>
+            log("Using stdin as input...")
+            log("Warning: dimacs parsing from stdin is experimental!")
             val scanner = new Scanner(System.in)
             val header = DimacsReader.readHeader(scanner)
             val dimacs = DimacsReader.read(scanner)
 
-            log("Warning, dimacs parsing from stdin is experimental!")
             (header, dimacs)
         }
 
@@ -76,8 +72,8 @@ object ImplGraphMain extends ArgotUtil with ConsoleLogger {
 
     log("Building implication graph...")
 
-    val additional = if (genFlag.value getOrElse false) {
-      log("    Considering features that end with _2 as generated ...")
+    val additional = if (!(genFlag.value.getOrElse(false))) {
+      log("[INFO] Considering features that end with _2 as generated...")
       header.varMap filter { case (k,v) => v.endsWith("_2") } map { _._1 }
     } else Nil
 

@@ -7,7 +7,12 @@ import java.io.File
 object DimacsReader {
 
   case class DimacsProblem(numVars: Int, cnf: CNF)
-  case class DimacsHeader(varMap: Map[Int, String], generated: Set[Int])
+  case class DimacsHeader(varMap: Map[Int, String], generated: Set[Int]) {
+
+    lazy val idMap: Map[String, Int] =
+      (varMap map { case (v,id) => (id, v) }).toMap
+    
+  }
 
   // (?m) is multi-line mode -- ^ $ matches BOL and EOL
   val comment = "(?m)^c.*$".r.pattern
@@ -47,5 +52,4 @@ object DimacsReader {
     DimacsHeader(Map() ++ (header map { case (v, _, id) => (v, id) }),
         (header filter { case (_, isGen, _) => isGen } map { case (v, _, _) => v }).toSet)
   }
-
 }
