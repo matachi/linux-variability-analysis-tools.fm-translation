@@ -5,8 +5,9 @@ import gsd.linux.cnf._
 import collection.immutable.PagedSeq
 import java.io.{PrintStream, InputStreamReader}
 import gsd.linux.{BExpr, BExprParser}
+import util.logging.ConsoleLogger
 
-object ConstraintCheckerMain {
+object ConstraintCheckerMain extends ConsoleLogger {
 
   import ArgotConverters._
 
@@ -28,15 +29,16 @@ object ConstraintCheckerMain {
       val cnfFile = cnfParam.value.get // mandatory parameter
       val (header, problem) =
         (DimacsReader.readHeaderFile(cnfFile), DimacsReader.readFile(cnfFile))
+
+      log("Reading dimacs file...")
       val sat = new SATBuilder(problem.cnf, problem.numVars, header.generated)
 
       val exprs = checkParam.value match {
         case Some(f) =>
-          BExprParser.parseBExprFile(f).expressions
+          BExprParser.parseBExprResult(f).expressions
         case None =>
           println("Reading expression from stdin...")
-          BExprParser.parseBExpr(
-            PagedSeq fromReader new InputStreamReader(System.in)).expressions
+          BExprParser.parseBExprResult(new java.util.Scanner(System.in)).expressions
       }
 
       val out = outParam.value match {

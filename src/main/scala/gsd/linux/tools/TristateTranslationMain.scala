@@ -56,6 +56,7 @@ object TristateTranslationMain extends ArgotUtil with ConsoleLogger {
         case (Some(p), None) => p.exconfig
 
         case (None, Some(f)) =>
+          log("Reading Kconfig extract from file...")
           KConfigParser.parseKConfigFile(f)
 
         case (None, None) =>

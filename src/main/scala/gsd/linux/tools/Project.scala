@@ -40,7 +40,7 @@ class FileBasedProject(val name: String,
   }
 
   override lazy val bool = boolFile match {
-    case Some(f) => BExprParser.parseBExprFile(f)
+    case Some(f) => BExprParser.parseBExprResult(f)
     case None => error("boolean expressions file not specified in project")
   }
 

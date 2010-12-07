@@ -15,11 +15,14 @@ object CNFMain extends ArgotUtil with ConsoleLogger {
 
   val name = "CNFMain"
 
+  val verbose = parser.flag[Boolean](List("v", "verbose"), "enable verbose output")
+
   val inParam = parser.parameter[String](
     "in-file", "input file containing boolean expressions, stdin if not specified.", true)
 
   val outParam = parser.parameter[String](
     "out-file", "output file to write CNF in dimacs format, stdout if not specified.", true)
+
 
   def main(args: Array[String]) {
     try {
@@ -31,14 +34,14 @@ object CNFMain extends ArgotUtil with ConsoleLogger {
             parser.usage("Either a project (-p) is specified or input & output parameters are used.")
 
           case (None, Some(f)) =>
-            BExprParser.parseBExprFile(f)
+            log("Reading boolean expressions from file...")
+            BExprParser.parseBExprResult(f)
 
           case (Some(p), None) => p.bool
 
           case (None, None) =>
             log("Using stdin for input...")
-            BExprParser.parseBExpr(
-              PagedSeq fromReader new InputStreamReader(System.in))
+            BExprParser.parseBExprResult(new java.util.Scanner(System.in))
         }
 
       val output =
@@ -48,17 +51,22 @@ object CNFMain extends ArgotUtil with ConsoleLogger {
           case _ => System.out
         }
 
-      execute(input, output)
+      execute(input, verbose.value.getOrElse(false), output)
     }
     catch {
       case e: ArgotUsageException => println(e.message)
     }
   }
 
-  def execute(in: BExprResult, out: PrintStream) {
+  def execute(in: BExprResult, verbose: Boolean, out: PrintStream) {
     log("# of generated: " + in.generated.size)
-    out.println(in.expressions.toCNF(in.idMap) toDimacs
-            (in.varMap, in.generated.toSet map in.idMap.apply))
+
+    val cnf = in.expressions flatMap { e =>
+      if (verbose) log("Converting: " + e)
+      e.toCNF(in.idMap)
+    }
+
+    out.println(cnf.toDimacs(in.varMap, in.generated.toSet map in.idMap.apply))
   }
 
 }
