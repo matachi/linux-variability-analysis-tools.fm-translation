@@ -99,8 +99,20 @@
                             <mainClass>gsd.linux.tools.TristateTranslationMain</mainClass>
                             <name>TristateTranslationMain</name>
                         </program>
+                        <program>
+                            <mainClass>gsd.linux.tools.ConstraintCheckerMain</mainClass>
+                            <name>ConstraintCheckerMain</name>
+                        </program>
                     </programs>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>package</id>
+                        <goals>
+                            <goal>assemble</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

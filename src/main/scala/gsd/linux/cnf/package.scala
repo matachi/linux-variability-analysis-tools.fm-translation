@@ -34,4 +34,11 @@ package object cnf {
       in flatMap { e => CNFBuilder.toCNF(e, idMap) }
   }
 
+  implicit def toRichBExpr(in: BExpr) = new RichBExpr(in)
+
+  class RichBExpr(in: BExpr) {
+    def toCNF(idMap: Map[String,Int]): CNF =
+      CNFBuilder.toCNF(in, idMap)
+  }
+
 }
