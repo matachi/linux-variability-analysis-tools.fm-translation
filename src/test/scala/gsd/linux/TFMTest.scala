@@ -23,7 +23,7 @@ class TFMTest extends AssertionsForJUnit {
   }
 
   def removeGenVars(in: List[List[(String, Int)]]) =
-    in map { _ remove { case (id, _) => id startsWith "_" } }
+    in map { _ filterNot { case (id, _) => id startsWith "_" } }
 
   implicit def toRichConfig(lst: List[(String, Int)]) =
     new RichConfig(lst)
@@ -53,7 +53,6 @@ class TFMTest extends AssertionsForJUnit {
       """
 
     println(exprs(in))
-
     expect(2)(allConfigs(in).size)
   }
 

@@ -1,6 +1,7 @@
 package gsd.linux
 
 import collection.mutable.ListBuffer
+import annotation.tailrec
 
 class TristateTranslation(k: AbstractKConfig) {
   import TExpr._
@@ -94,31 +95,70 @@ class TristateTranslation(k: AbstractKConfig) {
   def translate(c: AConfig): List[BExpr] = c match {
     case AConfig(id, t, inh, pro, defs, rev, ranges) =>
 
+      // use a generated variable for each expression in the reverse dependency
       val rds = rev map { r => (toTExpr(r), TId(IdGen.next)) }
-      //FIXME converting every reverse dependency to new id
-      val rdsExpr = ((TNo: TExpr) /: rds){ case (x,(_, id)) => x | id }
-      val rdsId = if (rds.isEmpty) TNo else TId(IdGen.next)
 
-      def t(rest: List[Default], prev: List[Default]): List[BExpr] =
-        rest match {
+      val rdsExpr = ((TNo: TExpr) /: rds){ case (x,(_, id)) => x | id }
+
+      // rdsEquiv will be Some if a generated variable is used to represent
+      // entire reverse dependency expression
+      val (rdsId, rdsEquiv): (TExpr, Option[BExpr]) =
+        if (rds.size < 4) (rdsExpr, None)
+        else {
+          val id = TId(IdGen.next)
+          (id, Some(rdsExpr eq id))
+        }
+
+      // create default constraints
+      def defaults(rest: List[Default]): List[BExpr] = {
+
+        // uses a BId to represent the negated previous conditions
+        def t(rest: List[Default], prevCondId: BId): List[BExpr] = rest match {
           case Nil => Nil
 
           case (h@Default(e,cond))::tail =>
-            val ante = ((toTExpr(pro) eq TNo) /: prev){ (x,y) =>
-              x & (toTExpr(y.cond) eq TNo)
-            } & (toTExpr(cond) > TNo)
 
-            // Handle default y quirk
+            // generate condition id for next iteration of t(..)
+            //TODO optimization: not necessary if tail is empty
+            val (nextCondId, nextCondEquiv) = {
+              val id = IdGen.next
+              val (bid1, bid2) = (BId(id + "_1"), BId(id + "_2"))
+
+              //FIXME id generator still generates _2 variable, so we make it dead
+              (bid1, (bid1 iff (prevCondId & (toTExpr(cond) eq TNo))) & !bid2)
+            }
+
+            // antecedent for current default
+            val ante = prevCondId & (toTExpr(cond) > TNo)
+
+            // Handle default y quirk (i.e. if default y, then config takes
+            // value of its condition, not y)
             val tex = if (e == Yes) toTExpr(cond) else toTExpr(e)
 
-            (ante implies (TId(id) eq (tex | rdsId))) :: t(tail, h::prev)
+            // tex | rdsId: config takes the max of the default of the RDs
+            (ante implies (TId(id) eq (tex | rdsId))) ::
+              nextCondEquiv :: // default condition equivalence
+              t(tail, nextCondId)
         }
 
-    (rds map { case (e, id) => id eq e }) ::: // reverse dependency equivalence
-    (rdsId eq rdsExpr) :: // reverse dependency equivalence
+        // negated prompt condition for defaults (since prevCondId represents
+        // the negated previous condition)
+        val (proId, proEquiv) = {
+          val id = IdGen.next
+          val (bid1, bid2) = (BId(id + "_1"), BId(id + "_2"))
+
+           //FIXME id generator still generates _2 variable, so we make it dead
+          (bid1, (bid1 iff (toTExpr(pro) eq TNo)) & !bid2)
+        }
+
+        proEquiv :: t(rest, proId)
+      }
+
+    (rds map { case (e, id) => id eq e }) ::: // reverse dependency sub-expressions
+            rdsEquiv.toList ::: // reverse dependency equivalence
             (rdsId <= TId(id)) ::  // reverse dependency lower bound
             (TId(id) <= toTExpr(inh)) ::  // inherited upper bound
-            t(defs, Nil)
+            defaults(defs) // defaults
   }
 
 }
