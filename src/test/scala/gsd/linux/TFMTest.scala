@@ -25,6 +25,10 @@ class TFMTest extends AssertionsForJUnit {
   def removeGenVars(in: List[List[(String, Int)]]) =
     in map { _ filterNot { case (id, _) => id startsWith "_" } }
 
+  def toSets[A](in: Iterable[Iterable[A]]): Set[Set[A]] =
+    (in map { _.toSet }).toSet
+
+
   implicit def toRichConfig(lst: List[(String, Int)]) =
     new RichConfig(lst)
 
@@ -176,6 +180,55 @@ class TFMTest extends AssertionsForJUnit {
 
     assert(allConfigs(in).size === 9)
   }
+
+  @Test def multipleDefaultsBoolean {
+    val in = """
+      config A1 boolean {
+        default [y] if [B1]
+        default [y] if [B2]
+      }
+      config B1 boolean {
+        prompt "..." if []
+      }
+      config B2 boolean {
+        prompt "..." if []
+      }
+      """
+
+    expect {
+      Set (
+        Set( ("A1",0), ("B1",0), ("B2",0) ),
+        Set( ("A1",2), ("B1",2), ("B2",0) ),
+        Set( ("A1",2), ("B1",2), ("B2",2) ),
+        Set( ("A1",2), ("B1",0), ("B2",2) )
+      )
+    } (toSets(removeGenVars(allConfigs(in))))
+  }
+
+  @Test def multipleDefaultsTristate {
+    val in = """
+      config A1 tristate {
+        default [y] if [B1]
+        default [m] if [B2]
+      }
+      config B1 boolean {
+        prompt "..." if []
+      }
+      config B2 boolean {
+        prompt "..." if []
+      }
+      """
+
+    expect {
+      Set (
+        Set( ("A1",0), ("B1",0), ("B2",0) ),
+        Set( ("A1",2), ("B1",2), ("B2",0) ),
+        Set( ("A1",2), ("B1",2), ("B2",2) ),
+        Set( ("A1",1), ("B1",0), ("B2",2) )
+        )
+    } (toSets(removeGenVars(allConfigs(in))))
+  }
+
 
   @Test def conditionalPrompt {
     val in = """
