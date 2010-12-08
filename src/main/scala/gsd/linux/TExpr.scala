@@ -91,8 +91,8 @@ abstract class TExpr {
    */
   def >(other: TExpr): BExpr = (this, other) match {
     
-    case (TMod,_) => this eq TNo
-    case (_,TMod) => this eq TYes
+    case (TMod, TId(_)) => this eq TNo
+    case (TId(_), TMod) => this eq TYes
 
     case _ => (toBExpr, other.toBExpr) match {
         //Yes > x
