@@ -15,6 +15,10 @@ object GraphBuilder {
     )
 
   def mkDirectedGraph[T](vertices: Iterable[T], edges: (T,T)*): DirectedGraph[T] =
-    new DirectedGraph ( Set() ++ vertices, edges map (Function.tupled(Edge.apply)) )
+    new DirectedGraph(vertices.toSet, edges map (Function.tupled(Edge.apply)) )
+
+
+  def mkUndirectedGraph[T <% Ordered[T]](vs: Iterable[T], edges: (T,T)*): UndirectedGraph[T] =
+    new UndirectedGraph (vs.toSet, edges map Function.tupled(Edge.apply))
 
 }
