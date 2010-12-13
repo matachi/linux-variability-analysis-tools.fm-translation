@@ -92,6 +92,10 @@
                             <name>CNFMain</name>
                         </program>
                         <program>
+                            <mainClass>gsd.linux.tools.MutexGraphMain</mainClass>
+                            <name>MutexGraphMain</name>
+                        </program>
+                        <program>
                             <mainClass>gsd.linux.tools.ImplGraphMain</mainClass>
                             <name>ImplGraphMain</name>
                         </program>

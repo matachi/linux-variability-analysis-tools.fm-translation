@@ -8,7 +8,7 @@ import gsd.graph._
 /**
  * Extension to the SATBuilder enabling the construction of an implication graph.
  */
-trait ImplBuilder extends SATBuilder {
+trait ImplBuilder extends SATBuilder with DoneArray {
 
   /**
    * Same effect as isSatisfiable, but with a different name to avoid problems
@@ -16,44 +16,6 @@ trait ImplBuilder extends SATBuilder {
    */
   def isVarsSat(vs: Int*) = solver.isSatisfiable(new VecInt(vs.toArray))
   
-  /**
-   * @return A vars x vars array where the 0th index is unused since
-   * we ignore the 0th variable in the SAT solver.
-   */
-  def mkDoneArray(additional: Iterable[Int]) = {
-    log("[DEBUG] Adding %d additional ignored variables".format(additional.size))
-
-    val arr = Array.ofDim[Boolean](size + 1, size + 1)
-
-    //Initialize self-tests to 'done'
-    for (i <- 0 to size)
-      arr(i)(i) = true
-
-    //Initialize variable 0 to 'done'
-    for (i <- 0 to size) {
-      arr(0)(i) = true
-      arr(i)(0) = true
-    }
-
-    //Initialize generated variables to 'done'
-    for {
-      g <- 0 to size if genArray(g)
-      i <- 0 to size
-    } {
-      arr(g)(i) = true
-      arr(i)(g) = true
-    }
-
-    for {
-      i <- additional
-      j <- 0 to size
-    } {
-      arr(i)(j) = true
-      arr(j)(i) = true
-    }
-    arr
-  }
-
   /**
    * Returns true iff v1 implies v2, false otherwise
    */

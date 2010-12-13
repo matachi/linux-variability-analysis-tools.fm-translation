@@ -1,11 +1,12 @@
 package gsd.linux.tools
 
-import gsd.graph.DirectedGraph
 import gsd.linux.cnf.DimacsReader
 import gsd.linux.cnf.DimacsReader.{DimacsHeader, DimacsProblem}
 import java.io.File
 import gsd.linux.{BExprParser, BExpr, KConfigParser, ConcreteKConfig}
 import gsd.linux.BExprParser.BExprResult
+import gsd.graph.{UndirectedGraph, DirectedGraph}
+
 // TODO maybe move this to a package object
 object Projects {
 
@@ -26,13 +27,15 @@ trait Project {
   def dimacs: DimacsProblem
   def header: DimacsHeader
   def implg: DirectedGraph[String]
+  def mutexg: UndirectedGraph[String]
 
 }
 class FileBasedProject(val name: String,
                        val exconfigFile: Option[String] = None,
                        val boolFile: Option[String] = None,
                        val dimacsFile: Option[String] = None,
-                       val implgFile: Option[String] = None) extends Project {
+                       val implgFile: Option[String] = None,
+                       val mutexgFile: Option[String] = None) extends Project {
 
   override lazy val exconfig = exconfigFile match {
     case Some(f) => KConfigParser.parseKConfigFile(f)
@@ -56,6 +59,9 @@ class FileBasedProject(val name: String,
 
   override lazy val implg =
     error("implication graph reader not implemented yet (in this project)")
+
+  override lazy val mutexg =
+    error("mutex graph reader not implemented yet (in this project)")
 }
 
 
