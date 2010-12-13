@@ -61,9 +61,9 @@ package object graph {
    * Orders an edge Edge(x,y) such that x < y and calls toMultiMap on it.
    */
   def toUndirectedMultiMap[T <% Ordered[T]](ts: Iterable[Edge[T]]): EdgeMap[T] =
-    toMultiMap(ts map {
+    toMultiMap((ts map {
       case Edge(x,y) if x < y => Edge(x,y)
       case Edge(x,y) => Edge(y,x)
-    })
+    }).toSet)
 
 }

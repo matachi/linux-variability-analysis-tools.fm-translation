@@ -27,15 +27,56 @@ import gsd.linux.BExpr
 import util.logging.Logged
 import org.sat4j.specs.{IConstr, ISolver, ContradictionException}
 
-abstract trait SATSolver[T <: ISolver] {
+trait SATSolver[T <: ISolver] {
   
   val solver: T = newSolver
   protected def newSolver: T
 
-  def toVecInt(lits: List[Int]): VecInt =
+  def toVecInt(lits: Iterable[Int]): VecInt =
     new VecInt(lits.toArray)
 }
 
+trait DoneArray extends SATBuilder {
+
+  /**
+   * @return A vars x vars array where the 0th index is unused since
+   * we ignore the 0th variable in the SAT solver.
+   */
+  def mkDoneArray(additional: Iterable[Int]) = {
+    log("[DEBUG] Adding %d additional ignored variables".format(additional.size))
+
+    val arr = Array.ofDim[Boolean](size + 1, size + 1)
+
+    //Initialize self-tests to 'done'
+    for (i <- 0 to size)
+      arr(i)(i) = true
+
+    //Initialize variable 0 to 'done'
+    for (i <- 0 to size) {
+      arr(0)(i) = true
+      arr(i)(0) = true
+    }
+
+    //Initialize generated variables to 'done'
+    for {
+      g <- 0 to size if genArray(g)
+      i <- 0 to size
+    } {
+      arr(g)(i) = true
+      arr(i)(g) = true
+    }
+
+    for {
+      i <- additional
+      j <- 0 to size
+    } {
+      arr(i)(j) = true
+      arr(j)(i) = true
+    }
+    arr
+  }
+
+}
 
 /**
  * WARNING: The SAT solver has its own internal state, be careful about
@@ -108,7 +149,8 @@ class SATBuilder(cnf: CNF, val size: Int, val genVars: Set[Int] = Set())
   protected def constrToClause(constr: IConstr, clause: Clause): Unit = {}
 
   def isSatisfiable = solver.isSatisfiable
-  def isSatisfiable(assump: List[Int]) =
+
+  def isSatisfiable(assump: Iterable[Int]) =
     solver.isSatisfiable(toVecInt(assump))
 
   def reset =
