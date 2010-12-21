@@ -2,7 +2,6 @@ package gsd.linux.cnf
 
 import org.sat4j.minisat.orders.PositiveLiteralSelectionStrategy
 import org.sat4j.minisat.SolverFactory
-import util.logging.Logged
 import gsd.graph.{Edge, UndirectedGraph}
 
 trait MutexBuilder extends SATBuilder with DoneArray {
@@ -69,6 +68,7 @@ trait MutexBuilder extends SATBuilder with DoneArray {
         j <- 1 to size if !done(i)(j) && solver.model(i) && solver.model(j)
       } {
         done(i)(j) = true
+        done(j)(i) = true
       }
 
     val mutexes = new collection.mutable.ListBuffer[Edge[T]]

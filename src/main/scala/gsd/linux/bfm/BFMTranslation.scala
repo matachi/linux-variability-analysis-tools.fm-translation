@@ -73,7 +73,7 @@
 //      case m: CMenu => mkMenu(m)
 //
 //      //Assuming choices have only configs as children. Holds for Linux, not
-//      //sure about other Kconfig projects.
+//      //sure about items Kconfig projects.
 //      case o: CChoice =>
 //        val configs = c.children.typeFilter[CConfig]
 //        assert(configs.size == c.children.size, "Choice members aren't all configs!")
