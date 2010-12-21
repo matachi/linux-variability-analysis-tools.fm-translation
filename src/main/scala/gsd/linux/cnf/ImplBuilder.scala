@@ -23,7 +23,7 @@ trait ImplBuilder extends SATBuilder with DoneArray {
 
   /**
    * Dead features should be removed prior to calling this otherwise these
-   * dead features will have implications to all other features!
+   * dead features will have implications to all items features!
    *
    * Optimization taken from Nele's implementation: If the formula is
    * satisfiable after a check to implication, then we examine the resulting
