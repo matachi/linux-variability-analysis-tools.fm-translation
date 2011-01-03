@@ -22,7 +22,7 @@ package object cnf {
       //number of variables, number of clauses
       sb append "p cnf %d %d\n".format(varMap.size, in.toList.size)
 
-      for (clause <- in) sb append clause.mkString(" ") append "\n"
+      for (clause <- in) sb append clause.mkString(" ") append " 0\n"
 
       sb.toString
     }

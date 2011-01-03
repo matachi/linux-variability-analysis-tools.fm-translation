@@ -30,8 +30,11 @@ object DimacsReader {
     val problem(numVars, numClauses) = s.nextLine
 
     val cnf =
-      for (i <- 0 until numClauses.toInt) yield
-        s.nextLine.split(' ').filterNot { _ == "" }.toList map { _.toInt }
+      for (i <- 0 until numClauses.toInt) yield {
+        val nums = s.nextLine.split(' ').filterNot { _ == "" }.toList map { _.toInt }
+        assert(nums.last == 0, "input file not in dimacs format")
+        nums.dropRight(1)
+      }
 
     DimacsProblem(numVars.toInt, cnf.toList)
   }
