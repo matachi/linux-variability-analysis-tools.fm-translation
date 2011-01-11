@@ -126,7 +126,7 @@ case object TNo extends TExpr {
 }
 
 case class TId(v: String) extends TExpr {
-  def toBExpr = (BId(v + "_1"), BId(v + "_2"))
+  def toBExpr = (BId(v), BId(v + "_m"))
 }
 
 case class TAnd(left: TExpr, right: TExpr) extends TExpr {

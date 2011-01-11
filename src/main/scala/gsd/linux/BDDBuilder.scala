@@ -44,7 +44,7 @@ object BDDBuilder {
 
 class BDDBuilder(val idMap: Map[String, Int]) {
   
-  val varMap = Map() ++ (idMap map { case (k,v) => (v,k) })
+  val varMap = (idMap map { case (k,v) => (v,k) }).toMap
 
   val factory = BDDFactory.init("java", 15000000, 1000000)
   factory.setVarNum(idMap.keySet.size * 2)
@@ -54,6 +54,15 @@ class BDDBuilder(val idMap: Map[String, Int]) {
   }
 
   def apply(e: BExpr): BDD = mkBDD(e)
+
+  def mkBDD(in: Clause): BDD =
+    (in map {
+      case i if i < 0 => factory nithVar -i
+      case i => factory ithVar i
+    }).foldLeft(zero){ _ orWith _ }
+
+  def mkBDD(in: CNF): BDD =
+    (in map mkBDD).foldLeft(one){ _ andWith _ }
 
   def mkBDD(in: BExpr): BDD =
     mkBDDWithConjunctions(in.splitConjunctions)

@@ -2,7 +2,6 @@ package gsd.linux
 
 import cnf.CNFBuilder
 import cnf.DimacsReader.{DimacsProblem, DimacsHeader}
-import org.junit.Test
 import org.scalatest.Suite
 import org.scalatest.prop.Checkers
 
@@ -10,6 +9,7 @@ import org.scalacheck.Prop._
 
 import cnf._
 import BDDBuilder._
+import org.junit.{Ignore, Test}
 
 class CNFTest extends Suite with Checkers with ExpressionGenerator with CNFGenerator {
 
@@ -49,19 +49,19 @@ class CNFTest extends Suite with Checkers with ExpressionGenerator with CNFGener
     }
   }
 
-
   /**
    * Tests that if e is satisfiable, then the Tseitin transformation should
    * also be satisfiable with the same assignment.
    */
-//  @Test def testCNFUsingBDDs = check {
-//    forAll { (e: BExpr) =>
-//      println("Testing: " + e)
-//      val cnf = e.toCNF.toExpression
-//      val bb = new BDDBuilder(mkIdMap(identifiers(cnf)))
-//      val result = bb.mkBDD(cnf).andWith(bb.mkBDD(e).satOne)
-//      begin0(result != bb.zero)(result.free)
-//    }
-//  }
+  @Ignore
+  @Test def testCNFUsingBDDs = check {
+    forAll { (e: BExpr) =>
+      val idMap = (e.identifiers.zipWithIndex map { case (id,i) => (id, i+1) }).toMap
+      val cnf = e.toCNF(idMap)
+      val bb = new BDDBuilder(idMap)
+      val result = bb.mkBDD(cnf).biimpWith(bb.mkBDD(e))
+      begin0(result != bb.zero)(result.free)
+    }
+  }
   
 }

@@ -14,7 +14,7 @@ class TristateTranslation(k: AbstractKConfig) {
   }
 
   def generated: List[String] =
-    (IdGen.allIds map { _ + "_1" }) ::: (IdGen.allIds map { _ + "_2"})
+    IdGen.allIds ::: (IdGen.allIds map { _ + "_m"})
 
   def identifiers: List[String] =
     k.identifiers.toList ::: IdGen.allIds
@@ -22,12 +22,12 @@ class TristateTranslation(k: AbstractKConfig) {
   def size: Int = identifiers.size
 
   /*
-   * Var i (odd) represents identifier x_1, Var i+1 (even) represents x_2.
+   * Var i (odd) represents identifier x, Var i+1 (even) represents x_m
    */
   def idMap: Map[String, Int] =
     Map() ++ {
       (identifiers flatMap
-              { id => List(id + "_1", id + "_2") }).zipWithIndex map
+              { id => List(id, id + "_m") }).zipWithIndex map
                      { case (id,i) => (id, i + 1) }
     }
 
@@ -47,7 +47,7 @@ class TristateTranslation(k: AbstractKConfig) {
       assert(math.abs(model(i)) == key, model(i) + " != " + key)
       val i1 = model(i) > 0
       val i2 = model(i+1) > 0
-      val id: String = varMap(key).slice(0, varMap(key).length - 2) //FIXME drop _1 suffix
+      val id = varMap(key)
       val state = (i1, i2) match {
         case (true, true)   => 2
         case (true, false)  => 1
@@ -73,19 +73,19 @@ class TristateTranslation(k: AbstractKConfig) {
       k.configs filter
               { _.ktype == KBoolType } map
               { _.id } map
-              { id => BId(id + "_1") implies BId(id + "_2") }
+              { id => BId(id) implies BId(id + "_m") }
     } ::: {
       // Disallow mod state from String, Int and Hex configs
 
       k.configs filter
               { t => t.ktype == KIntType || t.ktype == KHexType || t.ktype == KStringType } map
               { _.id } map
-              { id => BId(id + "_1") implies BId(id + "_2") }
+              { id => BId(id) implies BId(id + "_m") }
     } ::: {
       // Disallow (0,1) state
       // Ignore generated identifiers because they have equivalence
 
-      k.identifiers.toList map { id => BId(id + "_1") | !BId(id + "_2") }
+      k.identifiers.toList map { id => BId(id) | !BId(id + "_m") }
     }
 
   /**
@@ -122,7 +122,7 @@ class TristateTranslation(k: AbstractKConfig) {
             //TODO optimization: not necessary if tail is empty
             val (nextCondId, nextCondEquiv) = {
               val id = IdGen.next
-              val (bid1, bid2) = (BId(id + "_1"), BId(id + "_2"))
+              val (bid1, bid2) = (BId(id), BId(id + "_m"))
 
               //FIXME id generator still generates _2 variable, so we make it dead
               (bid1, (bid1 iff (prevCondId & (toTExpr(cond) eq TNo))) & !bid2)
@@ -145,7 +145,7 @@ class TristateTranslation(k: AbstractKConfig) {
         // the negated previous condition)
         val (proId, proEquiv) = {
           val id = IdGen.next
-          val (bid1, bid2) = (BId(id + "_1"), BId(id + "_2"))
+          val (bid1, bid2) = (BId(id), BId(id + "_m"))
 
            //FIXME id generator still generates _2 variable, so we make it dead
           (bid1, (bid1 iff (toTExpr(pro) eq TNo)) & !bid2)

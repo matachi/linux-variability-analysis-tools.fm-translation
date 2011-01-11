@@ -8,8 +8,6 @@ import org.junit.Test
  */
 class LinuxSATTest {
 
-  val formulasDir = "../formulas"
-
   def isDimacsSAT(file: String): Boolean = {
     println("Reading %s...".format(file))
     val (header, problem) =
@@ -18,6 +16,13 @@ class LinuxSATTest {
     val sat = new SATBuilder(problem.cnf, problem.numVars, header.generated)
     sat.isSatisfiable
   }
+
+
+  val formulasDir = "../formulas"
+
+  @Test
+  def v2_6_28_6_1var: Unit =
+    assert(isDimacsSAT(formulasDir + "/2.6.28.6-1var.dimacs"))
 
   @Test
   def v2_6_32_1var: Unit =
@@ -35,3 +40,4 @@ class LinuxSATTest {
   def v2_6_33_3_2var: Unit =
     assert(isDimacsSAT(formulasDir + "/2.6.33.3-2var.dimacs"))
 }
+

@@ -150,6 +150,10 @@
                             <name>VisibilityCSVMain</name>
                         </program>
                         <program>
+                            <mainClass>gsd.linux.stats.DefaultsDetailsMain</mainClass>
+                            <name>DefaultDetailsMain</name>
+                        </program>
+                        <program>
                             <mainClass>gsd.linux.stats.ChoiceSizeCSVMain</mainClass>
                             <name>ChoiceSizeCSVMain</name>
                         </program>
