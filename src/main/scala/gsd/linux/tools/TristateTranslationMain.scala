@@ -81,8 +81,8 @@ object TristateTranslationMain extends ArgotUtil with ConsoleLogger {
   def execute(k: ConcreteKConfig, out: PrintStream) {
     //First output identifiers
     for (id <- k.identifiers) {
-      out.println("@ " + id + "_1")
-      out.println("@ " + id + "_2")
+      out.println("@ " + id)
+      out.println("@ " + id + "_m")
     }
 
     val trans = new TristateTranslation(k)

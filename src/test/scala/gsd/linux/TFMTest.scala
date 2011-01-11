@@ -70,6 +70,9 @@ class TFMTest extends AssertionsForJUnit {
   }
 
 
+  /**
+   * TODO assertions
+   */
   @Test def everything {
     val in = """
       config A1 tristate {
@@ -93,7 +96,7 @@ class TFMTest extends AssertionsForJUnit {
       config Y1 tristate { prompt "..." if [] }
       config Z1 tristate { prompt "..." if [] }
       """
-    allConfigs(in) foreach println
+//    allConfigs(in) foreach println
   }
 
   /**

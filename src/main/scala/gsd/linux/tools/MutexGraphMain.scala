@@ -22,7 +22,7 @@ object MutexGraphMain extends ArgotUtil with ConsoleLogger {
     "output file for the mutex graph, stdout if not specified", true)
 
   val genFlag = parser.flag[Boolean](List("g"),
-    "do NOT consider variables that end with '_2' as generated")
+    "do NOT consider variables that end with '_m' as generated")
 
   def main(args: Array[String]) {
 
@@ -73,8 +73,8 @@ object MutexGraphMain extends ArgotUtil with ConsoleLogger {
     log("Building mutex graph...")
 
     val additional = if (!(genFlag.value.getOrElse(false))) {
-      log("[INFO] Considering features that end with _2 as generated...")
-      header.varMap filter { case (k,v) => v.endsWith("_2") } map { _._1 }
+      log("[INFO] Considering features that end with _m as generated...")
+      header.varMap filter { case (k,v) => v.endsWith("_m") } map { _._1 }
     } else Nil
 
     val g = sat.mkMutexGraph(header.varMap, additional)

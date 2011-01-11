@@ -9,6 +9,8 @@ case class CNFResult(ids: List[String],
                      idMap: Map[String, Int],
                      cnf: CNF) {
   val all = ids ::: generated
+
+  val generatedIds = generated map idMap.apply
 }
 
 /**

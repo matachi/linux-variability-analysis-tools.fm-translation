@@ -210,8 +210,8 @@
 //  def mkInherited(c: AConfig): List[T] = Nil
 //
 //  def mkChoiceConstraints(c: AChoice): List[T] =
-//    if (c.vis == Yes) Nil
-//    else List(toBExpr(c.vis))
+//    if (c.inherited == Yes) Nil
+//    else List(toBExpr(c.inherited))
 //
 //  def mkConfigConstraints(c: AConfig): List[T] =
 //    mkPresence(c) ::: mkInherited(c)
