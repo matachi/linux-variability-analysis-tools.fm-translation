@@ -155,4 +155,3 @@ object DefaultDetailsMain extends StatisticsMain {
       stats.configsWithRevDeps.size, stats.allConfigs.size))
   }
 }
-
