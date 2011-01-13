@@ -123,6 +123,10 @@
                             <mainClass>gsd.linux.tools.ConstraintCheckerMain</mainClass>
                             <name>ConstraintCheckerMain</name>
                         </program>
+                        <program>
+                            <mainClass>gsd.linux.stats.DescendantsMain</mainClass>
+                            <name>DescendantsMain</name>
+                        </program>
 
                         <!-- Stats -->
                         <program>
