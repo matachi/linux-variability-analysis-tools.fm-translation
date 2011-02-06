@@ -15,9 +15,10 @@ object DescendantsMain {
 
     def w(sym: CSymbol, depth: Int): List[((CSymbol, List[CSymbol]), Int)] =
       sym match {
+          // Ignore if-conditions
          case CMenu(_,true,children) =>
            children flatMap { child => w(child, depth) }
-         case _ if depth > maxDepth => Nil
+
          case _ =>
            val desc = (sym.children flatMap { child => w(child, depth + 1) })
            ((sym, desc map { case ((s,_),_) =>  s }), depth) :: desc
@@ -25,9 +26,30 @@ object DescendantsMain {
 
     val ts = w(k.root, 0)
 
-    ts foreach { case ((sym, children), depth) =>
-      println("%s %s".format(
-        List.fill(depth)("    ").mkString + sym.id, "(" + children.size + ")"))
+    ts foreach {
+      case ((sym, children), depth) if depth <= maxDepth =>
+
+      val name = sym match {
+        case CConfig(_,_,_,_,prompts,_,_,_,_,_) if !prompts.isEmpty =>
+          prompts.head.text
+        case _ => sym.id
+      }
+
+      val symType = sym match {
+        case CMenu(_,_,_) => "menu"
+        case CConfig(_,true,ktype,_,_,_,_,_,_,_) => "menuconfig"
+        case CConfig(_,false,ktype,_,_,_,_,_,_,_) => "config"
+        case _: CChoice => "choice"
+      }
+
+      println("%s%s (%s) %s".format(
+        List.fill(depth)("    ").mkString,
+        name,
+        symType,
+        "(" + children.size + ")"))
+
+      case _ =>
+        // do nothing
     }
   }
 
