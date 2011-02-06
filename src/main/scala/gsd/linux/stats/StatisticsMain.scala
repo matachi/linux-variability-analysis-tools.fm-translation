@@ -120,14 +120,28 @@ object ChoiceSizeCSVMain extends StatisticsMain {
 
   def execute(stats: Stats)(out: PrintStream) {
     stats.choices foreach { c =>
-      out.println("%d,%d,%s,%s".format(
-        c.children.size, stats.configs.size, "size", stats.name))
+      out.println("%d,%s".format(
+        c.children.size,  stats.name))
     }
   }
 
 }
 
 object VisibilityCSVMain extends StatisticsMain {
+
+  def execute(stats: Stats)(out: PrintStream) {
+    out.println("%d,%s,%s".format(
+      stats.configsWithVisConds.size, "cond-vis", stats.name))
+    out.println("%d,%s,%s".format(
+      stats.configsWithMultiplePrompts.size, "cond-vis-multi-prompts", stats.name))
+    out.println("%d,%s,%s".format(
+      stats.configsWithNoVisConds.size, "always-vis", stats.name))
+    out.println("%d,%s,%s".format(
+      stats.configsWithUncondDerived.size, "no-vis", stats.name))
+  }
+}
+
+object DerivationCSVMain extends StatisticsMain {
 
   def execute(stats: Stats)(out: PrintStream) {
     out.println("%d,%s,%s".format(
