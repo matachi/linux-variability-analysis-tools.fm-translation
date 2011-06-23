@@ -54,7 +54,7 @@ object CNFBuilder {
     case BNot(BId(v)) => List(-idMap(v))
     case BId(v) => List(idMap(v))
     case BOr(x, y) => toClause(x, idMap) ::: toClause(y, idMap)
-    case _ => error("Wrong format. Expression is not a clause: " + e)
+    case _ => sys.error("Wrong format. Expression is not a clause: " + e)
   }
 
   /**

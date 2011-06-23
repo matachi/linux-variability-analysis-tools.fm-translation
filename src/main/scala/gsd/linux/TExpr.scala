@@ -28,7 +28,7 @@ object TExpr extends Logged {
         log("WARN: Literal / Hex / Int not handled, returning TYes")
         TYes
 
-      case e => error("Unexpected expression (is it a boolean op?): " + e + ": " + e.getClass)
+      case e => sys.error("Unexpected expression (is it a boolean op?): " + e + ": " + e.getClass)
     }
     t(in)
   }

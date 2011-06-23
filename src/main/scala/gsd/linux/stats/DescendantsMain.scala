@@ -16,7 +16,7 @@ object DescendantsMain {
     def w(sym: CSymbol, depth: Int): List[((CSymbol, List[CSymbol]), Int)] =
       sym match {
           // Ignore if-conditions
-         case CMenu(_,true,children) =>
+         case CMenu(_,children) =>
            children flatMap { child => w(child, depth) }
 
          case _ =>
@@ -36,7 +36,7 @@ object DescendantsMain {
       }
 
       val symType = sym match {
-        case CMenu(_,_,_) => "menu"
+        case CMenu(_,_) => "menu"
         case CConfig(_,true,ktype,_,_,_,_,_,_,_) => "menuconfig"
         case CConfig(_,false,ktype,_,_,_,_,_,_,_) => "config"
         case _: CChoice => "choice"

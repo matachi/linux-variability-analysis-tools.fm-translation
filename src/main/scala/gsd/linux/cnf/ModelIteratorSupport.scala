@@ -25,8 +25,8 @@ trait ModelIteratorSupport extends SATSolver[ISolver] {
       }
     }
     catch {
-      case e: ContradictionException => error(e.getMessage)//do nothing
-      case e => error("what?" + e)
+      case e: ContradictionException => sys.error(e.getMessage)//do nothing
+      case e => sys.error("what?" + e)
     }
     result.toList
   }

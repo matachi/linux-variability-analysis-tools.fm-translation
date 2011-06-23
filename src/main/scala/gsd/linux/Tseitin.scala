@@ -60,7 +60,7 @@ trait Tseitin {
           val (yId, yExprs) = _tt(y)
           eId -> ((eId | !xId) :: (eId | !yId) :: (!eId | xId | yId) :: xExprs ::: yExprs)
         }
-        case _ => error("not supported: " + e + " from: " + in)
+        case _ => sys.error("not supported: " + e + " from: " + in)
       }
     }
     val (ttId, ttExprs) = _tt(in)

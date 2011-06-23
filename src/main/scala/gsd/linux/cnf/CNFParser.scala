@@ -52,7 +52,7 @@ object CNFParser extends RegexParsers with PackratParsers with ImplicitConversio
 
   private def succ[A](p : ParseResult[A]) = p match {
     case Success(res,_) => res
-    case x => error(x.toString)
+    case x => sys.error(x.toString)
   }
 
 }
