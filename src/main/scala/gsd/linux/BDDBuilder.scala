@@ -78,7 +78,7 @@ class BDDBuilder(val idMap: Map[String, Int]) {
       case BId(x) => factory ithVar idMap(x)
       case BTrue  => factory one
       case BFalse => factory zero
-      case _ => error("This case should never occur.")
+      case _ => sys.error("This case should never occur.")
     }
     (one /: lst.map(_mkBDD)){_ andWith _}
   }

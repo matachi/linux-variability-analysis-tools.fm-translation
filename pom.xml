@@ -26,10 +26,10 @@
 
     <groupId>ca.uwaterloo.gsd</groupId>
     <artifactId>fm-translation</artifactId>
-    <version>0.2-SNAPSHOT</version>
+    <version>0.3-SNAPSHOT</version>
     
     <properties>
-        <scala.version>2.8.0</scala.version>
+        <scala.version>2.9.0-1</scala.version>
     </properties>
 
     <repositories>
@@ -200,7 +200,7 @@
         <dependency>
             <groupId>ca.uwaterloo.gsd</groupId>
             <artifactId>lvat</artifactId>
-            <version>0.2-SNAPSHOT</version>
+            <version>0.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.scala-lang</groupId>
@@ -227,25 +227,25 @@
         </dependency>
         <dependency>
             <groupId>org.scalatest</groupId>
-            <artifactId>scalatest</artifactId>
-            <version>1.2</version>
+            <artifactId>scalatest_2.9.0</artifactId>
+            <version>1.6.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.clapper</groupId>
-            <artifactId>argot_2.8.0</artifactId>
-            <version>0.2</version>
+            <artifactId>argot_2.9.0</artifactId>
+            <version>0.3.1</version>
         </dependency>
         <dependency>
             <groupId>org.scala-tools.testing</groupId>
-            <artifactId>scalacheck_2.8.0</artifactId>
-            <version>1.7</version>
+            <artifactId>scalacheck_2.9.0-1</artifactId>
+            <version>1.9</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.7</version>
+            <version>4.8.2</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

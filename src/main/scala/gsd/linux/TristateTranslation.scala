@@ -52,7 +52,7 @@ class TristateTranslation(k: AbstractKConfig) {
         case (true, true)   => 2
         case (true, false)  => 1
         case (false, false) => 0
-        case (false, true)  => error("(0,1) state should never be in a model!")
+        case (false, true)  => sys.error("(0,1) state should never be in a model!")
       }
       result += Tuple2(id, state)
     }

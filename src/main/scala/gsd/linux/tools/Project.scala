@@ -39,29 +39,29 @@ class FileBasedProject(val name: String,
 
   override lazy val exconfig = exconfigFile match {
     case Some(f) => KConfigParser.parseKConfigFile(f)
-    case None => error("exconfig file not specified in project")
+    case None => sys.error("exconfig file not specified in project")
   }
 
   override lazy val bool = boolFile match {
     case Some(f) => BExprParser.parseBExprResult(f)
-    case None => error("boolean expressions file not specified in project")
+    case None => sys.error("boolean expressions file not specified in project")
   }
 
   override lazy val dimacs = dimacsFile match {
     case Some(f) => DimacsReader.readFile(f)
-    case None => error("dimacs file not specified in project")
+    case None => sys.error("dimacs file not specified in project")
   }
 
   override lazy val header = dimacsFile match {
     case Some(f) => DimacsReader.readHeaderFile(f)
-    case None => error("dimacs file not specified in project")
+    case None => sys.error("dimacs file not specified in project")
   }
 
   override lazy val implg =
-    error("implication graph reader not implemented yet (in this project)")
+    sys.error("implication graph reader not implemented yet (in this project)")
 
   override lazy val mutexg =
-    error("mutex graph reader not implemented yet (in this project)")
+    sys.error("mutex graph reader not implemented yet (in this project)")
 }
 
 

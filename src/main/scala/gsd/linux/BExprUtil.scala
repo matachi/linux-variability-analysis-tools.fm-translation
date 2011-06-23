@@ -56,7 +56,7 @@ object BExprUtil {
       case BOr(x,y)  => BOr(s(x), s(y))
       case BAnd(x,y) => BAnd(s(x), s(y))
       case _ if e == lookFor => replaceWith
-      case _ => error("Unsupported! Is input expression in the right format?")
+      case _ => sys.error("Unsupported! Is input expression in the right format?")
     }
     s(in)
   }

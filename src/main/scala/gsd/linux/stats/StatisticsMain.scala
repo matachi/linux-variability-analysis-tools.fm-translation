@@ -133,22 +133,6 @@ object VisibilityCSVMain extends StatisticsMain {
     out.println("%d,%s,%s".format(
       stats.configsWithVisConds.size, "cond-vis", stats.name))
     out.println("%d,%s,%s".format(
-      stats.configsWithMultiplePrompts.size, "cond-vis-multi-prompts", stats.name))
-    out.println("%d,%s,%s".format(
-      stats.configsWithNoVisConds.size, "always-vis", stats.name))
-    out.println("%d,%s,%s".format(
-      stats.configsWithUncondDerived.size, "no-vis", stats.name))
-  }
-}
-
-object DerivationCSVMain extends StatisticsMain {
-
-  def execute(stats: Stats)(out: PrintStream) {
-    out.println("%d,%s,%s".format(
-      stats.configsWithVisConds.size, "cond-vis", stats.name))
-    out.println("%d,%s,%s".format(
-      stats.configsWithMultiplePrompts.size, "cond-vis-multi-prompts", stats.name))
-    out.println("%d,%s,%s".format(
       stats.configsWithNoVisConds.size, "always-vis", stats.name))
     out.println("%d,%s,%s".format(
       stats.configsWithUncondDerived.size, "no-vis", stats.name))

@@ -24,12 +24,12 @@ class ConstraintStatistics(val name: String,
           (c.id, Rewriter.collects {
             case Id(s) => s
           }(c.properties))
-        case c@CMenu(Prompt(_,e),false,_) =>
+        case c@CMenu(Prompt(_,e),_) =>
           (c.id, Rewriter.collects {
             case Id(s) => s
           }(e))
         case _ =>
-          error("If conditions shouldn't appear here!")
+          sys.error("If conditions shouldn't appear here!")
       }
     }.toMap
 
