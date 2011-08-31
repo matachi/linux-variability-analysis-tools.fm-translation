@@ -32,7 +32,7 @@ object HierarchyMain {
     val violating = HierarchyAnalysis.findViolatingConfigs(k, sat, idMap)
 
     violating foreach { c =>
-      out.println(c.id)
+      out.println(c.name)
     }
   }
 
