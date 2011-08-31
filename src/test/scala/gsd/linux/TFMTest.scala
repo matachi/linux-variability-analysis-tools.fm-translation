@@ -124,7 +124,7 @@ class TFMTest extends AssertionsForJUnit {
 
   @Test def multipleSelectsDerived {
     val in = """
-      config A1 tristate
+      config A1 tristate {}
       config B1 tristate { prompt "B" if [] select A1 if [] }
       config C1 tristate { prompt "C" if [] select A1 if [] }
       config D1 tristate { prompt "D" if [] select A1 if [] }

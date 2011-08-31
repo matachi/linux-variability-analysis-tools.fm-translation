@@ -61,7 +61,7 @@ object BooleanTranslationMain extends ArgotUtil with ConsoleLogger {
 
         case (None, None) =>
           log("Using stdin as input...")
-          KConfigParser.parseKConfig(new InputStreamReader(System.in))
+          KConfigParser.parseKConfigStream(System.in)
       }
 
       val output =

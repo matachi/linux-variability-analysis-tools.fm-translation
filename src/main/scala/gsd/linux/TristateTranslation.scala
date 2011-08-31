@@ -72,15 +72,15 @@ class TristateTranslation(k: AbstractKConfig) {
 
       k.configs filter
               { _.ktype == KBoolType } map
-              { _.id } map
-              { id => BId(id) implies BId(id + "_m") }
+              { _.name } map
+              { name => BId(name) implies BId(name + "_m") }
     } ::: {
       // Disallow mod state from String, Int and Hex configs
 
       k.configs filter
               { t => t.ktype == KIntType || t.ktype == KHexType || t.ktype == KStringType } map
-              { _.id } map
-              { id => BId(id) implies BId(id + "_m") }
+              { _.name } map
+              { name => BId(name) implies BId(name + "_m") }
     } ::: {
       // Disallow (0,1) state
       // Ignore generated identifiers because they have equivalence
@@ -110,13 +110,14 @@ class TristateTranslation(k: AbstractKConfig) {
         }
 
       // create default constraints
-      def defaults(rest: List[Default]): List[BExpr] = {
+      def defaults(rest: List[ADefault]): List[BExpr] = {
 
         // uses a BId to represent the negated previous conditions
-        def t(rest: List[Default], prevCondId: BId): List[BExpr] = rest match {
+        def t(rest: List[ADefault], prevCondId: BId): List[BExpr] = rest match {
           case Nil => Nil
 
-          case (h@Default(e,cond))::tail =>
+            // FIXME not using prev on ADefault
+          case ADefault(e,_,cond)::tail =>
 
             // generate condition id for next iteration of t(..)
             //TODO optimization: not necessary if tail is empty
@@ -135,7 +136,7 @@ class TristateTranslation(k: AbstractKConfig) {
             // value of its condition, not y)
             val tex = if (e == Yes) toTExpr(cond) else toTExpr(e)
 
-            // tex | rdsId: config takes the max of the default of the RDs
+            // tex | rdsId: config takes the max of the default or the RDs
             (ante implies (TId(id) eq (tex | rdsId))) ::
               nextCondEquiv :: // default condition equivalence
               t(tail, nextCondId)
@@ -151,6 +152,7 @@ class TristateTranslation(k: AbstractKConfig) {
           (bid1, (bid1 iff (toTExpr(pro) eq TNo)) & !bid2)
         }
 
+        // The prompt acts as the first negated condition
         proEquiv :: t(rest, proId)
       }
 

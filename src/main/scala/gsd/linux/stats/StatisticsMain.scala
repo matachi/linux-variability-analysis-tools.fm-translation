@@ -4,7 +4,7 @@ import java.io.PrintStream
 import gsd.linux.{CSymbol, KConfigParser}
 
 abstract class StatisticsMain {
-  type Stats = ConstraintStatistics with VisibilityStatistics
+  type Stats = ConstraintStatistics
 
   def execute(stats: Stats)(out : PrintStream): Unit
 

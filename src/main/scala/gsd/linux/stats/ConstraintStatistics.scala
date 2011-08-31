@@ -13,19 +13,19 @@ class ConstraintStatistics(val name: String,
   lazy val configsDeclaringProperties =
     ppk.allConfigs filter { !_.properties.isEmpty }
 
-  private def mkSymbolsToId(in: List[CSymbol]): Map[String, Set[String]] =
+  private def mkSymbolsToId[A <: CSymbol](in: List[A]): Map[String, Set[String]] =
     {
       in map {
         case c: CConfig =>
-          (c.id, Rewriter.collects {
+          (c.name, Rewriter.collects {
             case Id(s) => s
           }(c.properties ::: c.depends) ++ (c.sels map { _.id }))
-        case c: CChoice =>
-          (c.id, Rewriter.collects {
+        case c@CChoice(_,Prompt(name,_),_,_,_,_) =>
+          (name, Rewriter.collects {
             case Id(s) => s
           }(c.properties))
-        case c@CMenu(Prompt(_,e),_) =>
-          (c.id, Rewriter.collects {
+        case c@CMenu(_,Prompt(name,e),_) =>
+          (name, Rewriter.collects {
             case Id(s) => s
           }(e))
         case _ =>
