@@ -216,7 +216,7 @@
         <dependency>
             <groupId>org.sat4j</groupId>
             <artifactId>org.sat4j.core</artifactId>
-            <version>2.1.1</version>
+            <version>2.3.0</version>
         </dependency>
         <dependency>
             <groupId>javabdd</groupId>
