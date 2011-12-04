@@ -7,8 +7,7 @@ organization := "ca.uwaterloo.gsd"
 scalaVersion := "2.9.0-1"
 
 libraryDependencies ++= Seq(
-    "ca.uwaterloo.gsd" % "lvat" % "0.5-SNAPSHOT",
-    "org.clapper" %% "argot" % "0.3.3",
+    "org.clapper" %% "argot" % "0.3.5",
     "org.sat4j" % "org.sat4j.core" % "2.1.1",
     "com.novocode" % "junit-interface" % "0.6" % "test",
     "junit" % "junit" % "4.8.2" % "test",
@@ -19,7 +18,11 @@ libraryDependencies ++= Seq(
 resolvers += "Local Maven Repository" at Path.userHome.asURL + "/.m2/repository"
 
 // only show 10 lines of stack traces
-traceLevel := 10
+traceLevel in run := 10
 
-javaOptions += "-Xss8192k -Xmx2048m"
+// fork a new JVM for 'run' and 'test:run'
+fork := true
+
+// options to use when forking
+javaOptions += "-Xss4096k"
 
