@@ -2,7 +2,7 @@ package gsd.linux.stats
 
 import java.io.PrintStream
 import gsd.linux.cnf.{SATBuilder, DimacsReader}
-import gsd.linux.{HierarchyAnalysis, KConfigParser}
+import gsd.linux.{Hierarchy, HierarchyAnalysis, KConfigParser}
 
 object HierarchyMain {
 
@@ -31,8 +31,10 @@ object HierarchyMain {
     println("Finding hierarchy violating configs...")
     val violating = HierarchyAnalysis.findViolatingConfigs(k, sat, idMap)
 
+    val parentMap = Hierarchy.mkParentMap(k)
+
     violating foreach { c =>
-      out.println(c.name)
+      out.println(c.name + "," + parentMap(c).name)
     }
   }
 

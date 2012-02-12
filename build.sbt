@@ -21,8 +21,10 @@ resolvers += "Local Maven Repository" at Path.userHome.asURL + "/.m2/repository"
 traceLevel in run := 10
 
 // fork a new JVM for 'run' and 'test:run'
-fork := true
+fork in run := true
 
 // options to use when forking
+javaOptions += "-Xmx2048m"
+
 javaOptions += "-Xss4096k"
 

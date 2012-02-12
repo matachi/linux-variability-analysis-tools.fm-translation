@@ -9,7 +9,7 @@ object IdMap {
     val map = new HashMap[String, Int]
     es foreach { e =>
       e.identifiers filter { !map.contains(_) } foreach { id =>
-        map += id -> map.size
+        map += id -> (map.size + 1)
       }
     }
     Map() ++ map

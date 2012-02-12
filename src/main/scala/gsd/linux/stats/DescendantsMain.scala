@@ -39,7 +39,7 @@ object DescendantsMain {
       case ((sym, children), depth) =>
 
       val name = sym match {
-        case CConfig(_,name,_,_,_,prompts,_,_,_,_,_) =>
+        case CConfig(_,name,_,_,_,prompts,_,_,_,_,_,_) =>
           if (prompts.isEmpty) name
           else prompts.head.text
         case CMenu(_, Prompt(name,_),_) => name
@@ -49,8 +49,8 @@ object DescendantsMain {
 
       val symType = sym match {
         case _:CMenu => "menu"
-        case CConfig(_,_,true,ktype,_,_,_,_,_,_,_) => "menuconfig"
-        case CConfig(_,_,false,ktype,_,_,_,_,_,_,_) => "config"
+        case CConfig(_,_,true,ktype,_,_,_,_,_,_,_,_) => "menuconfig"
+        case CConfig(_,_,false,ktype,_,_,_,_,_,_,_,_) => "config"
         case _: CChoice => "choice"
         case _ => sys.error("This should never occur.")
       }

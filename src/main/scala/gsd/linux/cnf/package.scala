@@ -1,7 +1,5 @@
 package gsd.linux
 
-import cnf.CNFBuilder
-
 package object cnf {
 
   type Clause = List[Int]
@@ -39,6 +37,13 @@ package object cnf {
   class RichBExpr(in: BExpr) {
     def toCNF(idMap: Map[String,Int]): CNF =
       CNFBuilder.toCNF(in, idMap)
+  }
+  
+  implicit def toRichMap(in: Map[String, Int]) = new RichMap(in)
+  
+  class RichMap(in: Map[String, Int]) {
+    def toVarMap =
+      (in map { case (id,v) => (v, id)}).toMap
   }
 
 }

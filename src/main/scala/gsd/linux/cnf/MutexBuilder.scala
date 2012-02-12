@@ -36,14 +36,14 @@ trait MutexBuilder extends SATBuilder with DoneArray {
    */
   def randomDisprover(lotSize: Int, attempts: Int, done: Array[Array[Boolean]]) = {
     def mkRandomizedLot: Seq[Int] =
-      (0 until lotSize).map { _ => rand.nextInt(size) + 1 }
+      (0 until lotSize).map { _ => rand.nextInt(cutoffSize) + 1 }
 
     for (i <- 0 until attempts) {
       Console.print("MG: randomized disprover: %d / %d\r".format((i + 1), attempts))
       if (isSatisfiable(mkRandomizedLot))
         for {
-          v1 <- 1 to size if solver.model(v1)
-          v2 <- 1 to size if solver.model(v2)
+          v1 <- 1 to cutoffSize if solver.model(v1)
+          v2 <- 1 to cutoffSize if solver.model(v2)
         } {
           done(v1)(v2) = true
           done(v2)(v1) = true
@@ -64,8 +64,8 @@ trait MutexBuilder extends SATBuilder with DoneArray {
 
     def markNonMutexes =
       for {
-        i <- 1 to size
-        j <- 1 to size if !done(i)(j) && solver.model(i) && solver.model(j)
+        i <- 1 to cutoffSize
+        j <- 1 to cutoffSize if !done(i)(j) && solver.model(i) && solver.model(j)
       } {
         done(i)(j) = true
         done(j)(i) = true
@@ -74,8 +74,8 @@ trait MutexBuilder extends SATBuilder with DoneArray {
     val mutexes = new collection.mutable.ListBuffer[Edge[T]]
 
     for {
-      i <- 1 to size
-      j <- i+1 to size if !done(i)(j)
+      i <- 1   to cutoffSize
+      j <- i+1 to cutoffSize if !done(i)(j)
     } {
       Console.print("MG: %5d / %5d | %5d\r".format(i, size, j)) //Write on same line
       if (mutex(i,j)) {

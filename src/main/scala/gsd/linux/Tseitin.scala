@@ -20,6 +20,9 @@
 
 package gsd.linux
 
+import org.kiama.rewriting.Rewriter
+
+
 /**
  * A simple Tseitin's Transformation that introduces a new variable for each
  * sub-expression.
@@ -29,43 +32,57 @@ package gsd.linux
  *
  * @author Steven She (shshe@gsd.uwaterloo.ca)
  */
-trait Tseitin {
+object Tseitin {
 
-  object IdGen {
-    val prefix = "_T"
-    var i = 0
+  case class TransformResult(expressions: List[BExpr], generated: List[String])
+
+  case class IdGen(start: Int, prefix: String) {
+    var i = start
     def next = { i+=1; prefix + i }
-    def allIds = (1 to i).map { "x" + _ }.toList
+    def allIds = (start to i).map { prefix + _ }.toList
   }
 
-  /**
-   * Assumes (bi-)implications have been factored out.
-   */
-  def transform(in: BExpr): List[BExpr] = {
-    def _tt(e: BExpr): Pair[BId, List[BExpr]] = {
-      val eId = BId(IdGen.next)
-      e match {
-        case n: BId => (eId, List(!eId | n, eId | !n))
-        case BNot(x) => {
-          val (xId, xExprs) = _tt(x)
-          eId -> ((!eId | !xId) :: (eId | xId) :: xExprs)
+  def transform(in: List[BExpr], prefix: String = "_T", offset: Int = 0): TransformResult = {
+    val idGen = IdGen(offset, prefix)
+
+    def _transform(ein: BExpr): List[BExpr] = {
+      import gsd.linux.cnf.CNFBuilder._
+      val e = Rewriter.rewrite(sIffRule <* sImpliesRule)(ein).simplify
+
+      def _tt(e: BExpr): Pair[BId, List[BExpr]] = {
+        e match {
+          case v: BId => {
+            val eId = BId(idGen.next)
+            eId -> List((!eId | v), (eId | !v))
+          }
+          case BNot(x) => {
+            val (xId, xExprs) = _tt(x)
+            val eId = BId(idGen.next)
+            eId -> ((!eId | !xId) :: (eId | xId) :: xExprs)
+          }
+          case BAnd(x,y) => {
+            val (xId, xExprs) = _tt(x)
+            val (yId, yExprs) = _tt(y)
+            val eId = BId(idGen.next)
+            eId -> ((!eId | xId) :: (!eId | yId) :: (eId | !xId | !yId) :: xExprs ::: yExprs)
+          }
+          case BOr(x,y) => {
+            val (xId, xExprs) = _tt(x)
+            val (yId, yExprs) = _tt(y)
+            val eId = BId(idGen.next)
+            eId -> ((eId | !xId) :: (eId | !yId) :: (!eId | xId | yId) :: xExprs ::: yExprs)
+          }
+          case _ => sys.error("not supported: " + e + " from: " + in)
         }
-        case BAnd(x,y) => {
-          val (xId, xExprs) = _tt(x)
-          val (yId, yExprs) = _tt(y)
-          eId -> ((!eId | xId) :: (!eId | yId) :: (eId | !xId | !yId) :: xExprs ::: yExprs)
-        }
-        case BOr(x,y) => {
-          val (xId, xExprs) = _tt(x)
-          val (yId, yExprs) = _tt(y)
-          eId -> ((eId | !xId) :: (eId | !yId) :: (!eId | xId | yId) :: xExprs ::: yExprs)
-        }
-        case _ => sys.error("not supported: " + e + " from: " + in)
       }
-    }
-    val (ttId, ttExprs) = _tt(in)
-    ttId :: ttExprs
-  }
 
+      val (ttId, ttExprs) = _tt(e)
+      ttId :: ttExprs
+    }
+
+    val results = in map _transform
+    TransformResult(results reduceLeft (_ ::: _), idGen.allIds)
+  }
 
 }
+

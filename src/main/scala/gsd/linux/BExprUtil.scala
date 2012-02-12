@@ -61,4 +61,14 @@ object BExprUtil {
     s(in)
   }
 
+  def sanitizeString(in: String): String =
+    in.replaceAll("""\W""", "_")
+
+  def sanitizeExpr(in: BExpr): BExpr = {
+    val regex = """\W""".r
+    rewrite(everywheretd(rule {
+      case BId(v) if !regex.findFirstIn(v).isEmpty => BId(sanitizeString(v))
+    }))(in)
+  }
+
 }

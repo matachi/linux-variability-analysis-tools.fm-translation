@@ -67,7 +67,7 @@ object ImplGraphMain extends ArgotUtil with ConsoleLogger {
               out: PrintStream) {
     
     log("Initializing SAT solver...")
-    val sat = new SATBuilder(dimacs.cnf, dimacs.numVars, header.generated)
+    val sat = new SATBuilder(dimacs.cnf, dimacs.numVars, header.generated, header.firstGen)
                 with ImplBuilder with ConsoleLogger
 
     log("Building implication graph...")

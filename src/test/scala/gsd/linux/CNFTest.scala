@@ -36,9 +36,9 @@ class CNFTest extends Suite with Checkers with ExpressionGenerator with CNFGener
   }
 
   @Test def dimacsReader {
-    val in = "c 1 a\nc 2 b\nc 3$ c\nc 4 d\np cnf 4 2\n1 2 0\n-1 -2 0\n"
+    val in = "c 1 a\nc 2 b\nc 3$ c\nc 4$ d\np cnf 4 2\n1 2 0\n-1 -2 0\n"
     val header = DimacsReader.readHeaderString(in)
-    expect(DimacsHeader(Map(1 -> "a", 2 -> "b", 3 -> "c", 4 -> "d"), Set(3)))(header)
+    expect(DimacsHeader(Map(1 -> "a", 2 -> "b", 3 -> "c", 4 -> "d"), Set(3, 4), 3))(header)
     val problem = DimacsReader.readString(in)
     expect(DimacsProblem(4, List(List(1, 2), List(-1, -2))))(problem)
   }

@@ -6,13 +6,13 @@ import org.junit.Test
 class TExprTest extends AssertionsForJUnit {
 
   @Test def eq {
-    expect(BTrue)((TYes eq TYes).simplify)
-    expect(BTrue)((TMod eq TMod).simplify)
-    expect(BTrue)((TNo eq TNo).simplify)
-    expect(BFalse)((TYes eq TMod).simplify)
-    expect(BFalse)((TMod eq TYes).simplify)
-    expect(BFalse)((TNo eq TMod).simplify)
-    expect(BFalse)((TNo eq TYes).simplify)
+    expect(BTrue)((TYes beq TYes).simplify)
+    expect(BTrue)((TMod beq TMod).simplify)
+    expect(BTrue)((TNo beq TNo).simplify)
+    expect(BFalse)((TYes beq TMod).simplify)
+    expect(BFalse)((TMod beq TYes).simplify)
+    expect(BFalse)((TNo beq TMod).simplify)
+    expect(BFalse)((TNo beq TYes).simplify)
   }
 
   @Test def lte {

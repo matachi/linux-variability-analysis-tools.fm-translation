@@ -26,6 +26,7 @@ import collection.mutable.ListBuffer
 import gsd.linux.BExpr
 import util.logging.Logged
 import org.sat4j.specs.{IConstr, ISolver, ContradictionException}
+import gsd.linux.cnf.DimacsReader.DimacsHeader
 
 trait SATSolver[T <: ISolver] {
   
@@ -37,6 +38,7 @@ trait SATSolver[T <: ISolver] {
 }
 
 trait DoneArray extends SATBuilder {
+  
 
   /**
    * @return A vars x vars array where the 0th index is unused since
@@ -45,30 +47,30 @@ trait DoneArray extends SATBuilder {
   def mkDoneArray(additional: Iterable[Int]) = {
     log("[DEBUG] Adding %d additional ignored variables".format(additional.size))
 
-    val arr = Array.ofDim[Boolean](size + 1, size + 1)
+    val arr = Array.ofDim[Boolean](cutoffSize + 1, cutoffSize + 1)
 
     //Initialize self-tests to 'done'
-    for (i <- 0 to size)
+    for (i <- 0 to cutoffSize)
       arr(i)(i) = true
 
     //Initialize variable 0 to 'done'
-    for (i <- 0 to size) {
+    for (i <- 0 to cutoffSize) {
       arr(0)(i) = true
       arr(i)(0) = true
     }
 
     //Initialize generated variables to 'done'
     for {
-      g <- 0 to size if genArray(g)
-      i <- 0 to size
+      g <- 0 to cutoffSize if genArray(g)
+      i <- 0 to cutoffSize
     } {
       arr(g)(i) = true
       arr(i)(g) = true
     }
 
     for {
-      i <- additional
-      j <- 0 to size
+      i <- additional if i <= cutoffSize
+      j <- 0 to cutoffSize
     } {
       arr(i)(j) = true
       arr(j)(i) = true
@@ -84,8 +86,15 @@ trait DoneArray extends SATBuilder {
  *
  * @author Steven She (shshe@gsd.uwaterloo.ca)
  */
-class SATBuilder(cnf: CNF, val size: Int, val genVars: Set[Int] = Set())
+class SATBuilder(cnf: CNF, 
+                 val size: Int, 
+                 val genVars: Set[Int] = Set(),
+                 // The cutoff between normal and generated variables
+                 // used to reduce the size of the done array
+                 val cutoff: Int = -1)
         extends SATSolver[ISolver] with Logged {
+  
+  val cutoffSize = if (cutoff > 0) cutoff else size
 
   def this(exprs: Iterable[BExpr], idMap: Map[String, Int], gens: Set[String]) =
     this(exprs flatMap { CNFBuilder.toCNF(_, idMap) }, idMap.size, gens map idMap.apply)
@@ -159,5 +168,43 @@ class SATBuilder(cnf: CNF, val size: Int, val genVars: Set[Int] = Set())
   def reload {
     reset
     init
+  }
+}
+
+object SATBuilder {
+  trait ConsoleHelper {
+    this: SATBuilder =>
+
+    val idMap: Map[String, Int]
+    lazy val varMap: Map[Int, String] = idMap map (_.swap)
+
+    /**
+     * isSatisfiable("!ARCH") or isSatisfiable("ARCH")
+     */
+    def isSatisfiable(assumps: String*): Boolean = {
+      val vars = assumps map { s =>
+        if (s startsWith "!") -idMap(s stripPrefix "!")
+        else idMap(s)
+      } toList
+
+      isSatisfiable(vars)
+    }
+  }
+
+  // Create a SATBuilder from a dimacs file
+  def apply(f: String) = {
+    val header= DimacsReader.readHeaderFile(f)
+    val dimacs = DimacsReader.readFile(f)
+    new SATBuilder(dimacs.cnf, dimacs.numVars, header.generated) with ConsoleHelper {
+      val idMap = header.idMap
+    }
+  }
+
+  // Create a SATBuilder from a list of expressions
+  def apply(exprs: List[BExpr], gens: Set[String] = Set.empty) = {
+    val idmap = IdMap.apply(exprs)
+    new SATBuilder(exprs, idmap, gens) with ConsoleHelper {
+      val idMap = idmap
+    }
   }
 }
