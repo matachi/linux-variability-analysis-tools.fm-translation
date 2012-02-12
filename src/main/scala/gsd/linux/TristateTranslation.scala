@@ -1,9 +1,16 @@
 package gsd.linux
 
 import collection.mutable.ListBuffer
-import annotation.tailrec
 
-class TristateTranslation(k: AbstractKConfig) {
+/**
+ * @param k
+ * @param env A list of environment variables. These variables are ignored when
+ *            creating constraints during the translation.
+ * @param addUndefined Add constraints that cause undefined / undeclared configs
+ *                     dead.
+ */
+class TristateTranslation(val k: AbstractKConfig,
+                          val addUndefined: Boolean = true) {
   import TExpr._
 
   object IdGen {
@@ -30,10 +37,6 @@ class TristateTranslation(k: AbstractKConfig) {
               { id => List(id, id + "_m") }).zipWithIndex map
                      { case (id,i) => (id, i + 1) }
     }
-
-
-  def varMap: Map[Int, String] =
-    Map() ++ (idMap map { case (id,v) => (v,id) })
 
 
   def interpret(model: Array[Int]): List[(String, Int)] = {
@@ -64,36 +67,39 @@ class TristateTranslation(k: AbstractKConfig) {
    * Stateful: Changes identifiers in IdGen
    */
   lazy val translate: List[BExpr] =
-    (translateNotSimplified map { _.simplify }) filterNot { _ == BTrue }
+    ((k.configs flatMap translate) ::: (k.choices flatMap translate)) map
+      (_.simplify) filter (_ != BTrue)
 
-  lazy val translateNotSimplified: List[BExpr] =
-    ((k.configs flatMap translate) filter{ _ != BTrue }) ::: {
-      // Disallow mod state from Boolean configs
 
-      k.configs filter
-              { _.ktype == KBoolType } map
-              { _.name } map
-              { name => BId(name) implies BId(name + "_m") }
-    } ::: {
-      // Disallow mod state from String, Int and Hex configs
+  def translate(c: AChoice): List[BExpr] = c match {
+    // Boolean, mandatory choice == XOR group
+    case AChoice(vis, true, isOpt, members) =>
+      // exclusions between all members
+      val exclusions = Combinations.choose(2, members) map { 
+        case List(x,y) => !BId(x) | !BId(y)
+        case _ => sys.error("This should never occur since we use Combinations.choose(2,...)")
+      }
+      
+     val mandImpl =
+       if (isOpt) Some((toTExpr(vis) > TNo) implies members.map(BId(_): BExpr).reduce(_|_))
+       else None
 
-      k.configs filter
-              { t => t.ktype == KIntType || t.ktype == KHexType || t.ktype == KStringType } map
-              { _.name } map
-              { name => BId(name) implies BId(name + "_m") }
-    } ::: {
-      // Disallow (0,1) state
-      // Ignore generated identifiers because they have equivalence
+     mandImpl.toList ::: exclusions
 
-      k.identifiers.toList map { id => BId(id) | !BId(id + "_m") }
-    }
+    // any other kind of group doesn't impose a constraint
+    case _ => Nil
+  }
 
   /**
-   * FIXME no ranges.
    * Always introducing new variable for reverse dependency expression.
    */
   def translate(c: AConfig): List[BExpr] = c match {
-    case AConfig(id, t, inh, pro, defs, rev, ranges) =>
+
+    // TODO verify that environment variables shouldn't impose any constraint
+    case AConfig(_,name, _, _, _, _, _, _) if k.env contains name =>
+      Nil
+
+    case AConfig(nodeId, name, t, inh, pro, defs, rev, ranges) =>
 
       // use a generated variable for each expression in the reverse dependency
       val rds = rev map { r => (toTExpr(r), TId(IdGen.next)) }
@@ -102,11 +108,9 @@ class TristateTranslation(k: AbstractKConfig) {
 
       // rdsEquiv will be Some if a generated variable is used to represent
       // entire reverse dependency expression
-      val (rdsId, rdsEquiv): (TExpr, Option[BExpr]) =
-        if (rds.size < 4) (rdsExpr, None)
-        else {
-          val id = TId(IdGen.next)
-          (id, Some(rdsExpr eq id))
+      val (rdsId, rdsEquiv): (TId, BExpr) = {
+          val id = IdGen.next
+          (TId(id), rdsExpr beq TId(id))
         }
 
       // create default constraints
@@ -126,7 +130,7 @@ class TristateTranslation(k: AbstractKConfig) {
               val (bid1, bid2) = (BId(id), BId(id + "_m"))
 
               //FIXME id generator still generates _2 variable, so we make it dead
-              (bid1, (bid1 iff (prevCondId & (toTExpr(cond) eq TNo))) & !bid2)
+              (bid1, (bid1 iff (prevCondId & (toTExpr(cond) beq TNo))) & !bid2)
             }
 
             // antecedent for current default
@@ -137,7 +141,7 @@ class TristateTranslation(k: AbstractKConfig) {
             val tex = if (e == Yes) toTExpr(cond) else toTExpr(e)
 
             // tex | rdsId: config takes the max of the default or the RDs
-            (ante implies (TId(id) eq (tex | rdsId))) ::
+            (ante implies (TId(name) beq (tex | rdsId))) ::
               nextCondEquiv :: // default condition equivalence
               t(tail, nextCondId)
         }
@@ -149,18 +153,60 @@ class TristateTranslation(k: AbstractKConfig) {
           val (bid1, bid2) = (BId(id), BId(id + "_m"))
 
            //FIXME id generator still generates _2 variable, so we make it dead
-          (bid1, (bid1 iff (toTExpr(pro) eq TNo)) & !bid2)
+          (bid1, (bid1 iff (toTExpr(pro) beq TNo)) & !bid2)
         }
 
         // The prompt acts as the first negated condition
         proEquiv :: t(rest, proId)
       }
 
-    (rds map { case (e, id) => id eq e }) ::: // reverse dependency sub-expressions
-            rdsEquiv.toList ::: // reverse dependency equivalence
-            (rdsId <= TId(id)) ::  // reverse dependency lower bound
-            (TId(id) <= toTExpr(inh)) ::  // inherited upper bound
-            defaults(defs) // defaults
+      // Disallow mod state from Boolean, String, Int and Hex configs
+      val typeConstraint: Option[BExpr] = t match {
+        case KBoolType | KStringType | KIntType | KHexType =>
+          Some(BId(name) implies BId(name + "_m") )
+        case _ => None
+      }
+
+      // Disallow (0,1) state
+      val tristateConstraints: List[BExpr] =
+        AbstractKConfig.identifiers(c).toList map { id => BId(id) | !BId(id + "_m") }
+
+      // Make undefined variables dead referenced in this config
+      val undefinedConstraints: List[BExpr] =
+        if (addUndefined) ((AbstractKConfig.identifiers(c) -- (k.configs map (_.name)) -- k.env) map (!BId(_))).toList
+        else Nil
+      
+      // an upper bound is only imposed on tristate configs, if it's parent is also tristate
+      val upperBoundConstraints: Option[BExpr] = (t, k.parentMap.get(c)) match {
+        case (KTriType, Some(AConfig(_,parentName,KTriType,_,_,_,_,_))) => Some(TId(name) <= TId(parentName))
+        case _ => None
+      }
+
+      (rds map { case (e, id) => id beq e }) ::: // reverse dependency sub-expressions
+        rdsEquiv :: // reverse dependency equivalence
+        (rdsId <= TId(name)) ::  // reverse dependency lower bound
+        typeConstraint.toList :::
+        // upperBoundConstraints.toList ::: FIXME ignoring upper bound
+        tristateConstraints :::
+        undefinedConstraints :::
+        defaults(defs) // defaults
   }
 
+}
+
+object TristateTranslation {
+  trait ConsoleHelper {
+    this: TristateTranslation =>
+
+    def translate(configName: String): List[BExpr] =
+      k.findConfig(configName) match {
+        case Some(config) => translate(config)
+        case None => sys.error("Config %s not found".format(configName))
+      }
+  }
+
+  // Convenience function for translating from console
+  def apply(file: String) =
+    new TristateTranslation(KConfigParser.parseKConfigFile(file)) with ConsoleHelper
+  
 }
