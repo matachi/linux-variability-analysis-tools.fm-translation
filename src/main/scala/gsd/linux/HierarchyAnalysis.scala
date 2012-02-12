@@ -20,21 +20,40 @@ object HierarchyAnalysis {
 
   /**
    * Returns a list of configs that can be present when it's parent is not.
+   * 
+   * These do not include dead features that are children of the root.
+   *
+   * Only the immediate child that violates the hierarchy constraints is
+   * recorded.
    */
   def findViolatingConfigs(k: ConcreteKConfig,
                            sat: SATBuilder,
                            idMap: Map[String, Int]): List[CConfig] = {
 
-    //A map from all features to their closest ancestor that's a Config
-    val configMap = Hierarchy.mkConfigMap(k)
+    def traverse(par: Option[CConfig])(curr: CSymbol): List[CConfig] = {
+      val violating = par match {
+        case Some(p) =>
+          // Find configs that violate hierarchy
+          curr.children collect {
+            case c: CConfig if sat.isSatisfiable(List(idMap(c.name), -idMap(p.name))) => c
+          }
 
-    // A child config is violating hierarchy if it can be present
-    // when it's parent is not. i.e. SAT(!(child -> parent))
-    // dead features return false since we call SAT(child,...)
-    configMap filter {
-      case (child, par) =>
-        sat.isSatisfiable(List(idMap(child.name), -idMap(par.name)))
-    } map { _._1 } toList
+        // Features at root don't have a closest config as parent, ignore
+        case None =>
+          Nil
+      }
+
+      curr match {
+        case c: CConfig =>
+          // If the current node is a config, set it to the closest parent
+          violating ::: (curr.children flatMap traverse(Some(c)))
+        case _ =>
+          // Otherwise, we use the current closest parent
+          violating ::: (curr.children flatMap traverse(par))
+      }
+    }
+
+    traverse(None)(k.root)
   }
 
 }

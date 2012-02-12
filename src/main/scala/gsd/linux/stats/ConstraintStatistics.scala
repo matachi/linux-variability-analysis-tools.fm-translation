@@ -61,7 +61,6 @@ class ConstraintStatistics(val name: String,
         case ((_,v),i) => ("menu_" + (i+1)) -> v
       }
     }
-
 }
 
 object ConstraintStatistics {

@@ -22,7 +22,7 @@ package gsd.linux.tools
 
 import gsd.linux._
 
-import java.io.{InputStreamReader, PrintStream}
+import java.io.PrintStream
 import org.clapper.argot.{ArgotConverters, ArgotUsageException}
 import util.logging.ConsoleLogger
 
@@ -42,6 +42,15 @@ object TristateTranslationMain extends ArgotUtil with ConsoleLogger {
 
   val outParam = parser.parameter[String](
     "out-file", "output file to write boolean expressions, stdout if not specified.", true)
+
+  val dupeFlag = parser.flag[Boolean](List("d"),
+    "remove duplicate configs that share the same name")
+
+  val noUndefinedFlag = parser.flag[Boolean](List("no-undefined"),
+    "do NOT add constraints for undefined configs")
+
+  val envParams = parser.multiOption[String](List("env"), "configname",
+    "configs that have their values based on environment variables")
 
   def main(args: Array[String]) {
 
@@ -79,14 +88,33 @@ object TristateTranslationMain extends ArgotUtil with ConsoleLogger {
   }
 
   def execute(k: ConcreteKConfig, out: PrintStream) {
+
+    val ids = (k.identifiers map BExprUtil.sanitizeString).toSet
+
+    assert(ids.size == k.identifiers.size)
+
     //First output identifiers
-    for (id <- k.identifiers) {
+    for (id <- ids) {
       out.println("@ " + id)
       out.println("@ " + id + "_m")
     }
 
-    val trans = new TristateTranslation(k)
-    val exprs = trans.translate
+    var ak =
+      if(dupeFlag.value.getOrElse(false))
+        k.toAbstractKConfig.retainOnlyDistinctConfigs
+      else
+        k.toAbstractKConfig
+
+    val additionalEnvs = envParams.value
+    if (!additionalEnvs.isEmpty)
+      ak.copy(env = ak.env ::: additionalEnvs.toList)
+
+    val addUndefined = !noUndefinedFlag.value.getOrElse(false)
+    if (!addUndefined)
+      log("Not adding constraints for undefined configs")
+
+    val trans = new TristateTranslation(ak, addUndefined)
+    val exprs = trans.translate map (BExprUtil.sanitizeExpr)
 
     for (id <- trans.generated) out.println("$ " + id)
     for (e  <- exprs) out.println(e)

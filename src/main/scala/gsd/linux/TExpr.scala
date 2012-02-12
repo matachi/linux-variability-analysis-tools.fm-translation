@@ -1,16 +1,13 @@
 package gsd.linux
 
 import collection.mutable.ListBuffer
-import util.logging.Logged
+import util.logging.{ConsoleLogger, Logged}
 
-object TExpr extends Logged {
+object TExpr extends Logged with ConsoleLogger {
 
-  /**
-   * Limited functionality, used to convert reverse dependency expression.
-   */
   def toTExpr(in: KExpr): TExpr = {
     def t(e: KExpr): TExpr = e match {
-      case Id(n) => TId(n)
+      case Id(x) => TId(x)
 
       case No  => TNo
       case Mod => TMod
@@ -18,15 +15,31 @@ object TExpr extends Logged {
 
       case And(x, y) => t(x) & t(y)
       case Or(x, y) => t(x) | t(y)
-      case Eq(l, r) => t(l) teq t(r)
-      case NEq(l, r) => !(t(l) teq t(r))
       case Not(e) => !t(e)
 
+      case Eq(Id(x), Literal("")) => TEq(TId(x), TNo)
+
+      // FIXME
+      // X != "something"
+      // can't handle this until we have proper literal support
+      case NEq(Id(x),Literal(_)) => TYes
+      case NEq(Id(x),KInt(_)) => TYes
+      case NEq(Id(x),KHex(_)) => TYes
+
+      case Eq(Id(x),Literal(_)) => !TEq(TId(x), TNo)
+      case Eq(Id(x),KInt(_)) => !TEq(TId(x), TNo)
+      case Eq(Id(x),KHex(_)) => !TEq(TId(x), TNo)
+
       case Literal("") => //FIXME ?
+        log("WARN: Literal=\"\" not handled, returning TNo: " + in)
         TNo
-      case Literal(_) | KHex(_) | KInt(_) =>
-        log("WARN: Literal / Hex / Int not handled, returning TYes")
+
+      case Literal(_) | KHex(_) | KInt(_) => // FIXME?
+        log("WARN: Literal / Hex / Int not handled, returning TYes: " + in)
         TYes
+
+      case Eq(l, r) => TEq(t(l), t(r))
+      case NEq(l, r) => !TEq(t(l), t(r))
 
       case e => sys.error("Unexpected expression (is it a boolean op?): " + e + ": " + e.getClass)
     }
@@ -41,7 +54,7 @@ abstract class TExpr {
   /**
    * Returns a single boolean expression.
    */
-  def eq(other: TExpr): BExpr = other match {
+  def beq(other: TExpr): BExpr = other match {
 
     case TNo => toBExpr match {
       case (e1, e2) => !e1 & !e2
@@ -66,10 +79,10 @@ abstract class TExpr {
   def <=(other: TExpr): BExpr = (this, other) match {
     
     case (TNo,_)  => BTrue
-    case (TYes,_) => other eq TYes
+    case (TYes,_) => other beq TYes
 
     case (_,TYes) => BTrue
-    case (_,TNo)  => this eq TNo
+    case (_,TNo)  => this beq TNo
 
     case _ => (toBExpr, other.toBExpr) match {
 
@@ -91,8 +104,8 @@ abstract class TExpr {
    */
   def >(other: TExpr): BExpr = (this, other) match {
     
-    case (TMod, TId(_)) => this eq TNo
-    case (TId(_), TMod) => this eq TYes
+    case (TMod, TId(_)) => this beq TNo
+    case (TId(_), TMod) => this beq TYes
 
     case _ => (toBExpr, other.toBExpr) match {
         //Yes > x

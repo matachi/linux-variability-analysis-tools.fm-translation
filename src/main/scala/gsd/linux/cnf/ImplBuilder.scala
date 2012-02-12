@@ -42,8 +42,8 @@ trait ImplBuilder extends SATBuilder with DoneArray {
 
     def markNonImplications =
       for {
-        i <- 1 to size
-        j <- 1 to size if !done(i)(j) && solver.model(i) && !solver.model(j)
+        i <- 1 to cutoffSize
+        j <- 1 to cutoffSize if !done(i)(j) && solver.model(i) && !solver.model(j)
       } {
         done(i)(j) = true
       }
@@ -51,10 +51,13 @@ trait ImplBuilder extends SATBuilder with DoneArray {
     val result = new collection.mutable.ListBuffer[Edge[T]]
 
     for {
-      i <- 1 to size
-      j <- 1 to size if !done(i)(j)
+      i <- 1 to cutoffSize
+      j <- 1 to cutoffSize if !done(i)(j)
     } {
-      Console.print("IG: %5d / %5d | %5d\r".format(i, size, j)) //Write on same line
+
+      if (j % 10 == 0)
+        Console.print("IG: %5d / %5d | %5d\r".format(i, cutoffSize, j)) //Write on same line
+
       if (implication(i,j)) {
         result += Edge(varMap(i), varMap(j))
         done(i)(j) = true

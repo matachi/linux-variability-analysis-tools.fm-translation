@@ -7,7 +7,7 @@ import java.io.File
 object DimacsReader {
 
   case class DimacsProblem(numVars: Int, cnf: CNF)
-  case class DimacsHeader(varMap: Map[Int, String], generated: Set[Int]) {
+  case class DimacsHeader(varMap: Map[Int, String], generated: Set[Int], firstGen: Int) {
 
     lazy val idMap: Map[String, Int] =
       (varMap map { case (v,id) => (id, v) }).toMap
@@ -46,13 +46,18 @@ object DimacsReader {
     val s = in.useDelimiter(System.getProperty("line.separator"))
 
     val header = new collection.mutable.ListBuffer[(Int,Boolean,String)]
+    var firstGen = -1
 
     while (s hasNext comment) {
-      val vardef(v, isGen, id) = s.nextLine
-      header += ((v.toInt, isGen != "", id))
+      val vardef(v, isGenSym, id) = s.nextLine
+      val isGen = isGenSym != ""
+      if (firstGen < 0 && isGen) firstGen = v.toInt
+
+      header += ((v.toInt, isGen, id))
     }
 
     DimacsHeader(Map() ++ (header map { case (v, _, id) => (v, id) }),
-        (header filter { case (_, isGen, _) => isGen } map { case (v, _, _) => v }).toSet)
+        (header filter { case (_, isGen, _) => isGen } map { case (v, _, _) => v }).toSet,
+        firstGen)
   }
 }

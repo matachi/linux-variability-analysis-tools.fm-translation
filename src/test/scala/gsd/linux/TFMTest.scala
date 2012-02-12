@@ -267,25 +267,6 @@ class TFMTest extends AssertionsForJUnit {
     expect(7)(allConfigs(in).size)
   }
 
-  @Test def inherited {
-    val in = """
-      config A1 tristate {
-        prompt "A1" if []
-        config A2 tristate {
-          prompt "A2" if []
-          inherited [A1]
-        }
-      }
-      """
-
-    assert {
-      allConfigs(in) forall { c =>
-        (c valueOf "A2") <= (c valueOf "A1")
-      }
-    }
-
-  }
-
   @Test def stringConfig1 {
 
     val in = """
