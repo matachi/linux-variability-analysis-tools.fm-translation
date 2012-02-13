@@ -24,7 +24,5 @@ traceLevel in run := 10
 fork in run := true
 
 // options to use when forking
-javaOptions += "-Xmx2048m"
-
-javaOptions += "-Xss4096k"
+javaOptions ++= Seq("-Xmx2048m", "-Xss4096k")
 
