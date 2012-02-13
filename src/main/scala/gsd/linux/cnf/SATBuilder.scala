@@ -45,7 +45,6 @@ trait DoneArray extends SATBuilder {
    * we ignore the 0th variable in the SAT solver.
    */
   def mkDoneArray(additional: Iterable[Int]) = {
-    log("[DEBUG] Adding %d additional ignored variables".format(additional.size))
 
     val arr = Array.ofDim[Boolean](cutoffSize + 1, cutoffSize + 1)
 

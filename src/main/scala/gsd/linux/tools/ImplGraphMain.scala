@@ -65,6 +65,8 @@ object ImplGraphMain extends ArgotUtil with ConsoleLogger {
 
   def execute(header: DimacsHeader, dimacs: DimacsProblem,
               out: PrintStream) {
+
+    log("[INFO] all variables past the first generated variable (%d) are ignored!".format(header.firstGen))
     
     log("Initializing SAT solver...")
     val sat = new SATBuilder(dimacs.cnf, dimacs.numVars, header.generated, header.firstGen)
@@ -76,14 +78,16 @@ object ImplGraphMain extends ArgotUtil with ConsoleLogger {
 
     val additional = if (!(genFlag.value.getOrElse(false))) {
       log("[INFO] Considering features that end with _m as generated...")
-      header.varMap filter { case (k,v) => v.endsWith("_m") } map { _._1 }
+      header.varMap filter {
+        case (k,v) => !header.generated.contains(k) && v.endsWith("_m")
+      } map { _._1 }
     } else Nil
 
     val g = sat.mkImplicationGraph(header.varMap, additional)
     out.println(g.toParseString)
 
     val endTime = System.currentTimeMillis()
-    log("Implication Graph Computation Time: %d seconds".format((startTime - endTime) / 1000))
+    log("Implication Graph Computation Time: %d seconds".format((endTime - startTime) / 1000))
   }
 
 }
