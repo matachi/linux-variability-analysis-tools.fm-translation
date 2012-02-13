@@ -38,35 +38,42 @@ trait ImplBuilder extends SATBuilder with DoneArray {
           additional: Iterable[Int] = Nil)
       : DirectedGraph[T] = {
 
+    log("[DEBUG] Adding %d additional ignored variables".format(additional.size))
+    log("[DEBUG] %d remain in the resulting implication graph".format(cutoffSize - additional.size))
+
+
     val done = mkDoneArray(additional)
 
-    def markNonImplications =
+    def markNonImplications() =
       for {
         i <- 1 to cutoffSize
-        j <- 1 to cutoffSize if !done(i)(j) && solver.model(i) && !solver.model(j)
+        j <- 1 to cutoffSize if solver.model(i) && !solver.model(j)
       } {
         done(i)(j) = true
       }
 
     val result = new collection.mutable.ListBuffer[Edge[T]]
 
-    for {
-      i <- 1 to cutoffSize
-      j <- 1 to cutoffSize if !done(i)(j)
-    } {
+    for (i <- 1 to cutoffSize) {
+      val startTime = System.currentTimeMillis()
 
-      if (j % 10 == 0)
-        Console.print("IG: %5d / %5d | %5d\r".format(i, cutoffSize, j)) //Write on same line
+      for (j <- 1 to cutoffSize if !done(i)(j)) {
 
-      if (implication(i,j)) {
-        result += Edge(varMap(i), varMap(j))
-        done(i)(j) = true
+        if (implication(i,j)) {
+          result += Edge(varMap(i), varMap(j))
+          done(i)(j) = true
+        }
+        else markNonImplications()
+
       }
-      else markNonImplications
+
+      Console.print("IG: %5d / %5d (time: %5d s)\r".format(i, cutoffSize,
+        (System.currentTimeMillis() - startTime) / 1000)) //Write on same line
     }
     Console.println("Done!")
 
     new DirectedGraph(((realVars -- additional) map varMap.apply).toSet, result)
+
 
   }
 
