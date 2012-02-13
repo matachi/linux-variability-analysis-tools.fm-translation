@@ -83,7 +83,7 @@ object ImplGraphMain extends ArgotUtil with ConsoleLogger {
     out.println(g.toParseString)
 
     val endTime = System.currentTimeMillis()
-    log("Implication Graph Computation Time: %d seconds", (startTime - endTime) / 1000)
+    log("Implication Graph Computation Time: %d seconds".format((startTime - endTime) / 1000))
   }
 
 }
