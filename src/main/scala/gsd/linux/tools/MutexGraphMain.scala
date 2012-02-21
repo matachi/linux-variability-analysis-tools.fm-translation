@@ -77,7 +77,13 @@ object MutexGraphMain extends ArgotUtil with ConsoleLogger {
       header.varMap filter { case (k,v) => v.endsWith("_m") } map { _._1 }
     } else Nil
 
+    val startTime = System.currentTimeMillis()
+
     val g = sat.mkMutexGraph(header.varMap, additional)
+
+    val endTime = System.currentTimeMillis()
+    log("Mutex Graph Computation Time: %d seconds".format((endTime - startTime) / 1000))
+
     out.println(g.toParseString)
   }
 
