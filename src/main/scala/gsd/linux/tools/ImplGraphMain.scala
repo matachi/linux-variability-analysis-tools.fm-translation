@@ -74,8 +74,6 @@ object ImplGraphMain extends ArgotUtil with ConsoleLogger {
 
     log("Building implication graph...")
 
-    val startTime = System.currentTimeMillis()
-
     val additional = if (!(genFlag.value.getOrElse(false))) {
       log("[INFO] Considering features that end with _m as generated...")
       header.varMap filter {
@@ -83,11 +81,14 @@ object ImplGraphMain extends ArgotUtil with ConsoleLogger {
       } map { _._1 }
     } else Nil
 
+    val startTime = System.currentTimeMillis()
+
     val g = sat.mkImplicationGraph(header.varMap, additional)
-    out.println(g.toParseString)
 
     val endTime = System.currentTimeMillis()
     log("Implication Graph Computation Time: %d seconds".format((endTime - startTime) / 1000))
+
+    out.println(g.toParseString)
   }
 
 }
