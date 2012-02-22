@@ -35,8 +35,8 @@ trait MutexBuilder extends SATBuilder with DoneArray {
    * TODO Set a time-out.
    */
   def randomDisprover(lotSize: Int, attempts: Int, done: Array[Array[Boolean]]) = {
-    def mkRandomizedLot: Seq[Int] =
-      (0 until lotSize).map { _ => rand.nextInt(cutoffSize) + 1 }
+    def mkRandomizedLot: Set[Int] =
+      ((0 until lotSize).map { _ => rand.nextInt(cutoffSize) + 1 }).toSet
 
     for (i <- 0 until attempts) {
       Console.print("MG: randomized disprover: %d / %d\r".format((i + 1), attempts))

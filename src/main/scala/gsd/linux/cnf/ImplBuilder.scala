@@ -41,41 +41,58 @@ trait ImplBuilder extends SATBuilder with DoneArray {
     log("[DEBUG] Adding %d additional ignored variables".format(additional.size))
     log("[DEBUG] %d remain in the resulting implication graph".format(cutoffSize - additional.size))
 
-
     val done = mkDoneArray(additional)
 
-    def markNonImplications() =
+    // For debugging purposes
+    def countRemaining = {
+      var count = 0
+
       for {
         i <- 1 to cutoffSize
-        j <- 1 to cutoffSize if solver.model(i) && !solver.model(j)
-      } {
-        done(i)(j) = true
-      }
+        j <- 1 to cutoffSize if !done(i)(j)
+      } count += 1
 
+      count
+    }
+
+    val numTotal = countRemaining
     val result = new collection.mutable.ListBuffer[Edge[T]]
 
     for (i <- 1 to cutoffSize) {
       val startTime = System.currentTimeMillis()
+      var numDone = 0
 
       for (j <- 1 to cutoffSize if !done(i)(j)) {
-
         if (implication(i,j)) {
           result += Edge(varMap(i), varMap(j))
-          done(i)(j) = true
-        }
-        else markNonImplications()
 
+          done(i)(j) = true
+          numDone += 1
+        }
+        else {
+          // mark non-implications using the computed model
+          for {
+            i <- 1 to cutoffSize
+            j <- 1 to cutoffSize if solver.model(i) && !solver.model(j) && !done(i)(j)
+          } {
+            done(i)(j) = true
+            numDone += 1
+          }
+        }
       }
 
-      Console.print("IG: %5d / %5d (time: %5d s)\r".format(i, cutoffSize,
-        (System.currentTimeMillis() - startTime) / 1000)) //Write on same line
+      Console.print(
+        "IG: %5d / %5d (time: %3d s) (done: %d / %d, %d remaining)\r".format(
+          i,
+          cutoffSize,
+          (System.currentTimeMillis() - startTime) / 1000,
+          numDone,
+          numTotal,
+          countRemaining // FIXME inefficient
+        )) //Write on same line
     }
     Console.println("Done!")
 
-    new DirectedGraph(((realVars -- additional) map varMap.apply).toSet, result)
-
-
+    new DirectedGraph[T](((realVars -- additional) map varMap.apply).toSet, result)
   }
-
-
 }

@@ -88,8 +88,7 @@ trait DoneArray extends SATBuilder {
 class SATBuilder(cnf: CNF, 
                  val size: Int, 
                  val genVars: Set[Int] = Set(),
-                 // The cutoff between normal and generated variables
-                 // used to reduce the size of the done array
+                 // the last variable that should be considered normal
                  val cutoff: Int = -1)
         extends SATSolver[ISolver] with Logged {
   
@@ -127,14 +126,14 @@ class SATBuilder(cnf: CNF,
   }
 
   def addCNF(cnf: CNF): Iterable[IConstr] =
-    cnf flatMap addClause
+    cnf flatMap (addClause(_).toList)
 
   def addClause(clause: Clause): Option[IConstr] =
     try {
       assert(!clause.contains(0), "Clause cannot contain 0")
       val vi = toVecInt(clause)
       val res = solver.addClause(vi)
-      vi.clear
+      vi.clear()
 
       if (res != null) {
         constrToClause(res, clause)
@@ -161,10 +160,10 @@ class SATBuilder(cnf: CNF,
   def isSatisfiable(assump: Iterable[Int]) =
     solver.isSatisfiable(toVecInt(assump))
 
-  def reset =
-    solver.reset
+  def reset() =
+    solver.reset()
   
-  def reload {
+  def reload() {
     reset
     init
   }
@@ -181,10 +180,10 @@ object SATBuilder {
      * isSatisfiable("!ARCH") or isSatisfiable("ARCH")
      */
     def isSatisfiable(assumps: String*): Boolean = {
-      val vars = assumps map { s =>
+      val vars = (assumps map { s =>
         if (s startsWith "!") -idMap(s stripPrefix "!")
         else idMap(s)
-      } toList
+      }).toList
 
       isSatisfiable(vars)
     }
