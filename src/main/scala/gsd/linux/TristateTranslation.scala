@@ -79,6 +79,8 @@ class TristateTranslation(val k: AbstractKConfig,
         case List(x,y) => !BId(x) | !BId(y)
         case _ => sys.error("This should never occur since we use Combinations.choose(2,...)")
       }
+
+      // Visibility condition should be passed down to choice members
       
      val mandImpl =
        if (isOpt) Some((toTExpr(vis) > TNo) implies members.map(BId(_): BExpr).reduce(_|_))
