@@ -43,7 +43,7 @@ object DimacsReader {
   def readHeaderString(s: String) = readHeader(new Scanner(s))
 
   def readHeader(in: Scanner): DimacsHeader = {
-    val s = in.useDelimiter(System.getProperty("line.separator"))
+    val s = in.useDelimiter("""\r?\n""")
 
     val header = new collection.mutable.ListBuffer[(Int,Boolean,String)]
     var firstGen = -1
