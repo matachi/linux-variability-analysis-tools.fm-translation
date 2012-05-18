@@ -12,6 +12,9 @@ import collection.mutable.ListBuffer
 class TristateTranslation(val k: AbstractKConfig,
                           val addUndefined: Boolean = true) {
   import TExpr._
+  import TristateTranslation.MODULES_CONFIG_NAME
+
+  val isModulesConfigDefined = k.findConfig(MODULES_CONFIG_NAME).isDefined
 
   object IdGen {
     val prefix = "_X"
@@ -98,10 +101,10 @@ class TristateTranslation(val k: AbstractKConfig,
   def translate(c: AConfig): List[BExpr] = c match {
 
     // TODO verify that environment variables shouldn't impose any constraint
-    case AConfig(_,name, _, _, _, _, _, _) if k.env contains name =>
+    case AConfig(_,name, _, _, _, _, _, _, _) if k.env contains name =>
       Nil
 
-    case AConfig(nodeId, name, t, inh, pro, defs, rev, ranges) =>
+    case AConfig(nodeId, name, t, inh, pro, defs, rev, ranges, modOnly) =>
 
       // use a generated variable for each expression in the reverse dependency
       val rds = rev map { r => (toTExpr(r), TId(IdGen.next)) }
@@ -179,10 +182,22 @@ class TristateTranslation(val k: AbstractKConfig,
         else Nil
       
       // an upper bound is only imposed on tristate configs, if it's parent is also tristate
+      // FIXME not used
       val upperBoundConstraints: Option[BExpr] = (t, k.parentMap.get(c)) match {
-        case (KTriType, Some(AConfig(_,parentName,KTriType,_,_,_,_,_))) => Some(TId(name) <= TId(parentName))
+        case (KTriType, Some(AConfig(_,parentName,KTriType,_,_,_,_,_,_))) => Some(TId(name) <= TId(parentName))
         case _ => None
       }
+
+      // Dependency on 'MODULES' for the 'm' state of tristate configs
+      val modConstraint: Option[BExpr] =
+        if (isModulesConfigDefined && t == KTriType)
+          Some((BId(name) & !BId(name + "_m")) implies BId(MODULES_CONFIG_NAME))
+        else None
+
+      // Disallow the 'y' state if the config has a dependency on '&& m'
+      val modOnlyConstraint: Option[BExpr] =
+        if (modOnly) Some(!BId(name + "_m"))
+        else None
 
       (rds map { case (e, id) => id beq e }) ::: // reverse dependency sub-expressions
         rdsEquiv :: // reverse dependency equivalence
@@ -191,12 +206,17 @@ class TristateTranslation(val k: AbstractKConfig,
         // upperBoundConstraints.toList ::: FIXME ignoring upper bound
         tristateConstraints :::
         undefinedConstraints :::
+        modConstraint.toList :::
+        modOnlyConstraint.toList :::
         defaults(defs) // defaults
   }
 
 }
 
 object TristateTranslation {
+
+  val MODULES_CONFIG_NAME = "MODULES"
+
   trait ConsoleHelper {
     this: TristateTranslation =>
 
