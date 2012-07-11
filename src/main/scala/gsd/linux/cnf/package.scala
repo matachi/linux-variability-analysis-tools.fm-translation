@@ -22,7 +22,7 @@ package object cnf {
 
       for (clause <- in) sb append clause.mkString(" ") append " 0\n"
 
-      sb.toString
+      sb.toString()
     }
 
   }

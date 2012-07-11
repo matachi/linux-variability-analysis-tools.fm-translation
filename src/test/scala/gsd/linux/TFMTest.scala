@@ -14,14 +14,6 @@ class TFMTest extends AssertionsForJUnit {
     trans.translate
   }
 
-  def allConfigs(in: String): List[List[(String,Int)]] = {
-    val ak = KConfigParser.parseKConfig(in).toAbstractKConfig
-    val trans = new TristateTranslation(ak)
-    val exprs = trans.translate
-    val sat = new SATBuilder(exprs, trans.idMap, trans.generated.toSet) with ModelIteratorSupport
-    sat.allConfigurations map trans.interpret
-  }
-
   def removeGenVars(in: List[List[(String, Int)]]) =
     in map { _ filterNot { case (id, _) => id startsWith "_" } }
 

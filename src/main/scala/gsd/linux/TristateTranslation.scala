@@ -1,7 +1,5 @@
 package gsd.linux
 
-import collection.mutable.ListBuffer
-
 /**
  * @param k
  * @param env A list of environment variables. These variables are ignored when
@@ -9,9 +7,8 @@ import collection.mutable.ListBuffer
  * @param addUndefined Add constraints that cause undefined / undeclared configs
  *                     dead.
  */
-class TristateTranslation(val k: AbstractKConfig,
-                          val addUndefined: Boolean = true) {
-  import TExpr._
+class TristateTranslation(val k: AbstractKConfig, val addUndefined: Boolean = true) {
+
   import TristateTranslation.MODULES_CONFIG_NAME
 
   val isModulesConfigDefined = k.findConfig(MODULES_CONFIG_NAME).isDefined
@@ -31,7 +28,7 @@ class TristateTranslation(val k: AbstractKConfig,
 
   def size: Int = identifiers.size
 
-  /*
+  /**
    * Var i (odd) represents identifier x, Var i+1 (even) represents x_m
    */
   def idMap: Map[String, Int] =
@@ -41,30 +38,13 @@ class TristateTranslation(val k: AbstractKConfig,
                      { case (id,i) => (id, i + 1) }
     }
 
+  val literalMap: Map[(String, KExpr), String] =
+    (k.literalExprs map (_ -> IdGen.next)).toMap
 
-  def interpret(model: Array[Int]): List[(String, Int)] = {
-    val varMap = Map() ++ (idMap map { case (id,v) => (v, id) })
-    val result = new ListBuffer[(String, Int)]
-
-    // Iterate only through identifiers in the Kconfig (ignoring generated)
-    for (i <- 0 until model.length by 2) {
-      val key = i + 1
-
-      assert(math.abs(model(i)) == key, model(i) + " != " + key)
-      val i1 = model(i) > 0
-      val i2 = model(i+1) > 0
-      val id = varMap(key)
-      val state = (i1, i2) match {
-        case (true, true)   => 2
-        case (true, false)  => 1
-        case (false, false) => 0
-        case (false, true)  => sys.error("(0,1) state should never be in a model!")
-      }
-      result += Tuple2(id, state)
-    }
-
-  result.toList
-  }
+  /**
+   * function instantiated with a map from string literal to generated variable
+   */
+  val toTExpr: KExpr => TExpr = TExpr.toTExpr(literalMap)
 
   /**
    * Stateful: Changes identifiers in IdGen
@@ -83,8 +63,6 @@ class TristateTranslation(val k: AbstractKConfig,
         case _ => sys.error("This should never occur since we use Combinations.choose(2,...)")
       }
 
-      // Visibility condition should be passed down to choice members
-      
      val mandImpl =
        if (isOpt) Some((toTExpr(vis) > TNo) implies members.map(BId(_): BExpr).reduce(_|_))
        else None
@@ -122,7 +100,7 @@ class TristateTranslation(val k: AbstractKConfig,
       def defaults(rest: List[ADefault]): List[BExpr] = {
 
         // uses a BId to represent the negated previous conditions
-        def t(rest: List[ADefault], prevCondId: BId): List[BExpr] = rest match {
+        def traverse(rest: List[ADefault], prevCondId: BId): List[BExpr] = rest match {
           case Nil => Nil
 
             // FIXME not using prev on ADefault
@@ -140,15 +118,26 @@ class TristateTranslation(val k: AbstractKConfig,
 
             // antecedent for current default
             val ante = prevCondId & (toTExpr(cond) > TNo)
+            
+            //
+            // Handle defaults differently for tristate and non-tristate configs
+            //
+            val defaultExpr = t match {
+              case KStringType | KIntType | KHexType =>
+                // FIXME check if an entry in the map exists
+                ante implies BId(literalMap((name, e)))
 
-            // Handle default y quirk (i.e. if default y, then config takes
-            // value of its condition, not y)
-            val tex = if (e == Yes) toTExpr(cond) else toTExpr(e)
+              case  _ =>
+                // Handle default y quirk (i.e. if default y, then config takes
+                // value of its condition, not y)
+                val tex = if (e == Yes) toTExpr(cond) else toTExpr(e)
 
-            // tex | rdsId: config takes the max of the default or the RDs
-            (ante implies (TId(name) beq (tex | rdsId))) ::
+                // tex | rdsId: config takes the max of the default or the RDs
+                ante implies (TId(name) beq (tex | rdsId))
+            }
+            defaultExpr ::
               nextCondEquiv :: // default condition equivalence
-              t(tail, nextCondId)
+              traverse(tail, nextCondId)
         }
 
         // negated prompt condition for defaults (since prevCondId represents
@@ -162,7 +151,7 @@ class TristateTranslation(val k: AbstractKConfig,
         }
 
         // The prompt acts as the first negated condition
-        proEquiv :: t(rest, proId)
+        proEquiv :: traverse(rest, proId)
       }
 
       // Disallow mod state from Boolean, String, Int and Hex configs

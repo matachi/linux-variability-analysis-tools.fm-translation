@@ -28,7 +28,7 @@ object CNFMain extends ArgotUtil with ConsoleLogger {
     try {
       parser.parse(args)
 
-      val input =
+      val input: BExprParser.BExprResult =
         (pOpt.value, inParam.value) match {
           case (Some(_), Some(_)) =>
             parser.usage("Either a project (-p) is specified or input & output parameters are used.")
@@ -70,6 +70,3 @@ object CNFMain extends ArgotUtil with ConsoleLogger {
   }
 
 }
-
-
-

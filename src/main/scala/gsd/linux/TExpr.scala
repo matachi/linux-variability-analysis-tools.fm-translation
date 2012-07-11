@@ -1,11 +1,18 @@
 package gsd.linux
 
-import collection.mutable.ListBuffer
 import util.logging.{ConsoleLogger, Logged}
+
 
 object TExpr extends Logged with ConsoleLogger {
 
-  def toTExpr(in: KExpr): TExpr = {
+  /**
+   * @param eqMap map from an eq / neq expression as a (name, expr) pair to an identifier.
+   *                used to substitute and expression to an identifier to support equality /
+   *                inequality between string configs.
+   * @param in expression to translate
+   * @return
+   */
+  def toTExpr(eqMap: Map[(String, KExpr), String])(in: KExpr): TExpr = {
     def t(e: KExpr): TExpr = e match {
       case Id(x) => TId(x)
 
@@ -16,6 +23,19 @@ object TExpr extends Logged with ConsoleLogger {
       case And(x, y) => t(x) & t(y)
       case Or(x, y) => t(x) | t(y)
       case Not(e) => !t(e)
+
+
+      case Eq(Id(name), value) if eqMap.contains(name, value) =>
+        TId(eqMap((name, value)))
+
+      case Eq(value, Id(name)) if eqMap.contains(name, value) =>
+        TId(eqMap((name, value)))
+
+      case NEq(Id(name), value) if eqMap.contains(name, value) =>
+        !TId(eqMap((name, value)))
+
+      case NEq(value, Id(name)) if eqMap.contains(name, value) =>
+        !TId(eqMap((name, value)))
 
       case Eq(Id(x), Literal("")) => TEq(TId(x), TNo)
 
@@ -48,7 +68,13 @@ object TExpr extends Logged with ConsoleLogger {
 
 }
 
+/**
+ * A TExpr represent a tristate expression with three values.
+ */
 abstract class TExpr {
+
+
+  // Converts the tristate expression to a boolean expression of 2 variables
   def toBExpr: (BExpr, BExpr)
 
   /**
@@ -165,3 +191,4 @@ case class TEq(left: TExpr, right: TExpr) extends TExpr {
     case ((l1, l2), (r1, r2)) => (l1 iff r1, l2 iff r2)
   }
 }
+
