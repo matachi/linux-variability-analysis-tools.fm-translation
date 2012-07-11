@@ -87,8 +87,8 @@ object TseitinMain extends ArgotUtil with ConsoleLogger {
 
     // Find the last generated number
     val lastGenInt =
-      ((in.generated filter (_.startsWith(prefix)) map
-      (_.substring(prefix.length)) map (_.toInt) sorted) lastOption) match {
+      (in.generated filter (_.startsWith(prefix)) map
+      (_.substring(prefix.length)) map (_.toInt)).toList.sorted.lastOption match {
         case Some(n) => n
         case None => 0
       }
@@ -106,7 +106,8 @@ object TseitinMain extends ArgotUtil with ConsoleLogger {
 
     val result =
       BExprResult(in.ids,
-                  in.generated ::: transGens,
+                  in.generated ++ transGens,
+                  in.genEqs,
                   unchanged.toList ::: transExprs)
 
     result.write(out)

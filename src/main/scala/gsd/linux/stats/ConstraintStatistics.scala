@@ -66,8 +66,12 @@ class ConstraintStatistics(val name: String,
 object ConstraintStatistics {
 
   def isSubsumedBy(e1: KExpr, e2: KExpr): Boolean = {
-    val t1 = TExpr.toTExpr(e1)
-    val t2 = TExpr.toTExpr(e2)
+
+    // Use a translation without any expression substitution
+    val toTExpr = TExpr.toTExpr(Map()) _
+
+    val t1 = toTExpr(e1)
+    val t2 = toTExpr(e2)
 
     val (b11, b12) = t1.toBExpr
     val (b21, b22) = t2.toBExpr

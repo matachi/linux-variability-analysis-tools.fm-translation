@@ -43,9 +43,6 @@ object TristateTranslationMain extends ArgotUtil with ConsoleLogger {
   val outParam = parser.parameter[String](
     "out-file", "output file to write boolean expressions, stdout if not specified.", true)
 
-  val dupeFlag = parser.flag[Boolean](List("d"),
-    "remove duplicate configs that share the same name")
-
   val noUndefinedFlag = parser.flag[Boolean](List("no-undefined"),
     "do NOT add constraints for undefined configs")
 
@@ -93,21 +90,18 @@ object TristateTranslationMain extends ArgotUtil with ConsoleLogger {
 
     assert(ids.size == k.identifiers.size)
 
-    //First output identifiers
+    // TODO refactor this to a propositional formula class
+    // First output identifiers
     for (id <- ids) {
       out.println("@ " + id)
       out.println("@ " + id + "_m")
     }
 
-    var ak =
-      if(dupeFlag.value.getOrElse(false))
-        k.toAbstractKConfig.retainOnlyDistinctConfigs
-      else
-        k.toAbstractKConfig
+    var ak = k.toAbstractKConfig
 
     val additionalEnvs = envParams.value
     if (!additionalEnvs.isEmpty)
-      ak.copy(env = ak.env ::: additionalEnvs.toList)
+      ak = ak.copy(env = ak.env ::: additionalEnvs.toList)
 
     val addUndefined = !noUndefinedFlag.value.getOrElse(false)
     if (!addUndefined)
@@ -117,6 +111,23 @@ object TristateTranslationMain extends ArgotUtil with ConsoleLogger {
     val exprs = trans.translate map (BExprUtil.sanitizeExpr)
 
     for (id <- trans.generated) out.println("$ " + id)
+
+    // TODO move this to a BExprResult
+    // variable configname value
+    for ( ((name, value), id) <- trans.literalMap.toList sortBy { case ((x,_),_) => x }) 
+      value match {
+        case Literal(l) =>
+          out.println("""$s %s %s %s""".format(id, name, l))
+        case Id(x) =>
+          out.println("""$v %s %s %s""".format(id, name, x))
+        case KInt(i) =>
+          out.println("""$i %s %s %s""".format(id, name, i))
+        case KHex(h) =>
+          out.println("""$h %s %s %s""".format(id, name, h))
+        case e =>
+          sys.error("Unsupported generated equality: " + e)
+      }
+
     for (e  <- exprs) out.println(e)
   }
 }
