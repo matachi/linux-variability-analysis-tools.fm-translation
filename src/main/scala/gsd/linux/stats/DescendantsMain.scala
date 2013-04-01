@@ -43,7 +43,7 @@ object DescendantsMain {
           if (prompts.isEmpty) name
           else prompts.head.text
         case CMenu(_, Prompt(name,_),_) => name
-        case CChoice(_,Prompt(name,_),_,_,_,_) => name
+        case CChoice(_,Prompt(name,_),_,_,_,_,_) => name
         case _ => sys.error("this should never occur.")
       }
 

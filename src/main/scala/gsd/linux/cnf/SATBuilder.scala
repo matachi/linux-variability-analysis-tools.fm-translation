@@ -191,7 +191,7 @@ object SATBuilder {
 
   // Create a SATBuilder from a dimacs file
   def apply(f: String) = {
-    val header= DimacsReader.readHeaderFile(f)
+    val header = DimacsReader.readHeaderFile(f)
     val dimacs = DimacsReader.readFile(f)
     new SATBuilder(dimacs.cnf, dimacs.numVars, header.generated) with ConsoleHelper {
       val idMap = header.idMap
