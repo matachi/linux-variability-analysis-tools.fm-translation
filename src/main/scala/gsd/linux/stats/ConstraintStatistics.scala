@@ -20,7 +20,7 @@ class ConstraintStatistics(val name: String,
           (c.name, Rewriter.collects {
             case Id(s) => s
           }(c.properties ::: c.depends) ++ (c.sels map { _.id }))
-        case c@CChoice(_,Prompt(name,_),_,_,_,_) =>
+        case c@CChoice(_,Prompt(name,_),_,_,_,_,_) =>
           (name, Rewriter.collects {
             case Id(s) => s
           }(c.properties))
