@@ -24,14 +24,14 @@ import gsd.linux._
 
 import java.io.{InputStreamReader, PrintStream}
 import org.clapper.argot.{ArgotConverters, ArgotUsageException}
-import util.logging.ConsoleLogger
+import com.typesafe.scalalogging.LazyLogging
 
 /**
  * Outputs the boolean translation of a Kconfig extract. 
  *
  * @author Steven She (shshe@gsd.uwaterloo.ca)
  */
-object BooleanTranslationMain extends ArgotUtil with ConsoleLogger {
+object BooleanTranslationMain extends ArgotUtil with LazyLogging {
 
   val name = "BooleanTranslationMain"
 
@@ -56,11 +56,11 @@ object BooleanTranslationMain extends ArgotUtil with ConsoleLogger {
         case (Some(p), None) => p.exconfig
 
         case (None, Some(f)) =>
-          log("Reading Kconfig extract from file...")
+          logger.info("Reading Kconfig extract from file...")
           KConfigParser.parseKConfigFile(f)
 
         case (None, None) =>
-          log("Using stdin as input...")
+          logger.info("Using stdin as input...")
           KConfigParser.parseKConfigStream(System.in)
       }
 

@@ -21,11 +21,11 @@
 package gsd.linux.stats
 
 import gsd.linux.cnf.SATBuilder
-import util.logging.Logged
+import com.typesafe.scalalogging.LazyLogging
 
 class SATStatistics(val sat: SATBuilder,
                     val idMap: Map[String, Int],
-                    val undefined: Set[String] = Set()) extends Logged {
+                    val undefined: Set[String] = Set()) extends LazyLogging {
 
   // Will ignore features that are not present in the idMap
   val undefinedVars: Set[Int] =
@@ -38,7 +38,7 @@ class SATStatistics(val sat: SATBuilder,
     val result = new collection.mutable.ListBuffer[Int]
     for (i <- (1 to sat.size) if !sat.genVars.contains(i)) {
       if (!sat.isSatisfiable(List(i))) {
-        log("Dead feature: %s".format(varMap(i))) // FIXME: accessing idMap in vars
+        logger.info("Dead feature: %s".format(varMap(i))) // FIXME: accessing idMap in vars
         result += i
       }
     }
@@ -58,7 +58,7 @@ class SATStatistics(val sat: SATBuilder,
     for (i <- (1 to sat.size) if !sat.genVars.contains(i) && !deadVars.contains(i)) {
       // Assume that all undefined vars are negated
       if (!sat.isSatisfiable(i :: negUndefinedVars)) {
-        log("Dead feature from undefined: %s".format(varMap(i))) // FIXME: accessing idMap in vars
+        logger.info("Dead feature from undefined: %s".format(varMap(i))) // FIXME: accessing idMap in vars
         result += i
       }
     }

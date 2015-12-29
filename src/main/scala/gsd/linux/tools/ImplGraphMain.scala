@@ -1,6 +1,6 @@
 package gsd.linux.tools
 
-import util.logging.ConsoleLogger
+import com.typesafe.scalalogging.LazyLogging
 import java.io.PrintStream
 
 import gsd.linux.cnf.DimacsReader.{DimacsHeader, DimacsProblem}
@@ -9,7 +9,7 @@ import org.clapper.argot._
 import gsd.linux.cnf.{DimacsReader, ImplBuilder, SATBuilder}
 import java.util.Scanner
 
-object ImplGraphMain extends ArgotUtil with ConsoleLogger {
+object ImplGraphMain extends ArgotUtil with LazyLogging {
 
   val name = "ImplGraphMain"
 
@@ -40,8 +40,8 @@ object ImplGraphMain extends ArgotUtil with ConsoleLogger {
             (DimacsReader.readHeaderFile(f), DimacsReader.readFile(f))
 
           case (None, None) =>
-            log("Using stdin as input...")
-            log("Warning: dimacs parsing from stdin is experimental!")
+            logger.info("Using stdin as input...")
+            logger.info("Warning: dimacs parsing from stdin is experimental!")
             val scanner = new Scanner(System.in)
             val header = DimacsReader.readHeader(scanner)
             val dimacs = DimacsReader.read(scanner)
@@ -66,16 +66,16 @@ object ImplGraphMain extends ArgotUtil with ConsoleLogger {
   def execute(header: DimacsHeader, dimacs: DimacsProblem,
               out: PrintStream) {
 
-    log("[INFO] all variables past the first generated variable (%d) are ignored!".format(header.firstGen))
+    logger.info("[INFO] all variables past the first generated variable (%d) are ignored!".format(header.firstGen))
     
-    log("Initializing SAT solver...")
+    logger.info("Initializing SAT solver...")
     val sat = new SATBuilder(dimacs.cnf, dimacs.numVars, header.generated, header.firstGen)
-                with ImplBuilder with ConsoleLogger
+                with ImplBuilder with LazyLogging
 
-    log("Building implication graph...")
+    logger.info("Building implication graph...")
 
     val additional = if (!(genFlag.value.getOrElse(false))) {
-      log("[INFO] Considering features that end with _m as generated...")
+      logger.info("[INFO] Considering features that end with _m as generated...")
       header.varMap filter {
         case (k,v) => !header.generated.contains(k) && v.endsWith("_m")
       } map { _._1 }
@@ -86,7 +86,7 @@ object ImplGraphMain extends ArgotUtil with ConsoleLogger {
     val g = sat.mkImplicationGraph(header.varMap, additional)
 
     val endTime = System.currentTimeMillis()
-    log("Implication Graph Computation Time: %d seconds".format((endTime - startTime) / 1000))
+    logger.info("Implication Graph Computation Time: %d seconds".format((endTime - startTime) / 1000))
 
     out.println(g.toParseString)
   }

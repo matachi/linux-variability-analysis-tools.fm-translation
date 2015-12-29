@@ -20,7 +20,7 @@
 
 package gsd.linux.stats
 
-import util.logging.ConsoleLogger
+import com.typesafe.scalalogging.LazyLogging
 import java.io.PrintStream
 
 import gsd.linux.cnf.DimacsReader.{DimacsHeader, DimacsProblem}
@@ -30,7 +30,7 @@ import java.util.Scanner
 import org.clapper.argot._
 import gsd.linux.tools.ArgotUtil
 
-object DeadFeaturesMain extends ArgotUtil with ConsoleLogger {
+object DeadFeaturesMain extends ArgotUtil with LazyLogging {
 
   import ArgotConverters._
 
@@ -62,8 +62,8 @@ object DeadFeaturesMain extends ArgotUtil with ConsoleLogger {
             (DimacsReader.readHeaderFile(f), DimacsReader.readFile(f))
 
           case (None, None) =>
-            log("Using stdin as input...")
-            log("Warning: dimacs parsing from stdin is experimental!")
+            logger.info("Using stdin as input...")
+            logger.info("Warning: dimacs parsing from stdin is experimental!")
             val scanner = new Scanner(System.in)
             val header = DimacsReader.readHeader(scanner)
             val dimacs = DimacsReader.read(scanner)
@@ -91,16 +91,16 @@ object DeadFeaturesMain extends ArgotUtil with ConsoleLogger {
     val generated =
       if (genFlag.value.getOrElse(false)) header.generated
       else {
-        log("[INFO] Considering features that end with _m as generated...")
+        logger.info("[INFO] Considering features that end with _m as generated...")
         header.generated ++
           (header.varMap filter { case (_,v) => v.endsWith("_m") } map (_._1))
       }
 
-    log("Initializing SAT solver...")
+    logger.info("Initializing SAT solver...")
     val sat = new SATBuilder(dimacs.cnf, dimacs.numVars, generated)
-                with ConsoleLogger
+                with LazyLogging
 
-    val stats = new SATStatistics(sat, header.idMap) with ConsoleLogger
+    val stats = new SATStatistics(sat, header.idMap) with LazyLogging
 
     stats.deadFeatures foreach out.println
 

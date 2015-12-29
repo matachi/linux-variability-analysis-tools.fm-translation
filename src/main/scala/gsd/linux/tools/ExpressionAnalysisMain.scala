@@ -24,9 +24,9 @@ import gsd.linux._
 import gsd.linux.BExprParser.BExprResult
 
 import org.clapper.argot._
-import util.logging.ConsoleLogger
+import com.typesafe.scalalogging.LazyLogging
 
-object ExpressionAnalysisMain extends ConsoleLogger {
+object ExpressionAnalysisMain extends LazyLogging {
 
   import ArgotConverters._
 
@@ -44,10 +44,10 @@ object ExpressionAnalysisMain extends ConsoleLogger {
 
       val input: BExprResult = exprParam.value match {
         case Some(f) =>
-          log("Reading boolean expressions from file...")
+          logger.info("Reading boolean expressions from file...")
           BExprParser.parseBExprResult(f)
         case None =>
-          log("Using stdin for input...")
+          logger.info("Using stdin for input...")
           BExprParser.parseBExprResult(new java.util.Scanner(System.in))
       }
 

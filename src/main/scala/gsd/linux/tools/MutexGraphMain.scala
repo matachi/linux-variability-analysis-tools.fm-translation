@@ -1,6 +1,6 @@
 package gsd.linux.tools
 
-import util.logging.ConsoleLogger
+import com.typesafe.scalalogging.LazyLogging
 import java.io.PrintStream
 
 import gsd.linux.cnf.DimacsReader.{DimacsHeader, DimacsProblem}
@@ -9,7 +9,7 @@ import org.clapper.argot._
 import java.util.Scanner
 import gsd.linux.cnf.{MutexBuilder, DimacsReader, ImplBuilder, SATBuilder}
 
-object MutexGraphMain extends ArgotUtil with ConsoleLogger {
+object MutexGraphMain extends ArgotUtil with LazyLogging {
 
   val name = "MutexGraphMain"
 
@@ -40,8 +40,8 @@ object MutexGraphMain extends ArgotUtil with ConsoleLogger {
             (DimacsReader.readHeaderFile(f), DimacsReader.readFile(f))
 
           case (None, None) =>
-            log("Using stdin as input...")
-            log("Warning: dimacs parsing from stdin is experimental!")
+            logger.info("Using stdin as input...")
+            logger.info("Warning: dimacs parsing from stdin is experimental!")
             val scanner = new Scanner(System.in)
             val header = DimacsReader.readHeader(scanner)
             val dimacs = DimacsReader.read(scanner)
@@ -66,14 +66,14 @@ object MutexGraphMain extends ArgotUtil with ConsoleLogger {
   def execute(header: DimacsHeader, dimacs: DimacsProblem,
               out: PrintStream) {
 
-    log("Initializing SAT solver...")
+    logger.info("Initializing SAT solver...")
     val sat = new SATBuilder(dimacs.cnf, dimacs.numVars, header.generated)
-                with MutexBuilder with ConsoleLogger
+                with MutexBuilder with LazyLogging
 
-    log("Building mutex graph...")
+    logger.info("Building mutex graph...")
 
     val additional = if (!(genFlag.value.getOrElse(false))) {
-      log("[INFO] Considering features that end with _m as generated...")
+      logger.info("[INFO] Considering features that end with _m as generated...")
       header.varMap filter { case (k,v) => v.endsWith("_m") } map { _._1 }
     } else Nil
 
@@ -82,7 +82,7 @@ object MutexGraphMain extends ArgotUtil with ConsoleLogger {
     val g = sat.mkMutexGraph(header.varMap, additional)
 
     val endTime = System.currentTimeMillis()
-    log("Mutex Graph Computation Time: %d seconds".format((endTime - startTime) / 1000))
+    logger.info("Mutex Graph Computation Time: %d seconds".format((endTime - startTime) / 1000))
 
     out.println(g.toParseString)
   }

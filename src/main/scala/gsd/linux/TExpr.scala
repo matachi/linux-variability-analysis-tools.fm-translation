@@ -1,9 +1,9 @@
 package gsd.linux
 
-import util.logging.{ConsoleLogger, Logged}
+import com.typesafe.scalalogging.LazyLogging
 
 
-object TExpr extends Logged with ConsoleLogger {
+object TExpr extends LazyLogging with LazyLogging {
 
   /**
    * @param eqMap map from an eq / neq expression as a (name, expr) pair to an identifier.
@@ -51,11 +51,11 @@ object TExpr extends Logged with ConsoleLogger {
       case Eq(Id(x),KHex(_)) => !TEq(TId(x), TNo)
 
       case Literal("") => //FIXME ?
-        log("WARN: Literal=\"\" not handled, returning TNo: " + in)
+        logger.info("WARN: Literal=\"\" not handled, returning TNo: " + in)
         TNo
 
       case Literal(_) | KHex(_) | KInt(_) => // FIXME?
-        log("WARN: Literal / Hex / Int not handled, returning TYes: " + in)
+        logger.info("WARN: Literal / Hex / Int not handled, returning TYes: " + in)
         TYes
 
       case Eq(l, r) => TEq(t(l), t(r))

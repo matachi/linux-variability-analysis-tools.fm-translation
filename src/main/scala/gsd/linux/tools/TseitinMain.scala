@@ -20,7 +20,7 @@
 
 package gsd.linux.tools
 
-import util.logging.ConsoleLogger
+import com.typesafe.scalalogging.LazyLogging
 import java.io.PrintStream
 import gsd.linux.BExprParser.BExprResult
 import gsd.linux.Tseitin.TransformResult
@@ -28,7 +28,7 @@ import gsd.linux.Tseitin.TransformResult
 import org.clapper.argot.{ArgotConverters, ArgotUsageException}
 import gsd.linux.{BExpr, Tseitin, BExprParser}
 
-object TseitinMain extends ArgotUtil with ConsoleLogger {
+object TseitinMain extends ArgotUtil with LazyLogging {
 
   val name = "TseitinMain"
 
@@ -49,10 +49,10 @@ object TseitinMain extends ArgotUtil with ConsoleLogger {
 
       val input: BExprResult = inParam.value match {
         case Some(f) =>
-          log("Reading boolean expressions from file...")
+          logger.info("Reading boolean expressions from file...")
           BExprParser.parseBExprResult(f)
         case None =>
-          log("Using stdin for input...")
+          logger.info("Using stdin for input...")
           BExprParser.parseBExprResult(new java.util.Scanner(System.in))
       }
 
@@ -93,16 +93,16 @@ object TseitinMain extends ArgotUtil with ConsoleLogger {
         case None => 0
       }
 
-    log("Last Generated Variable %d".format(lastGenInt))
+    logger.info("Last Generated Variable %d".format(lastGenInt))
 
     // change foreach { e =>
-    //   log("Transforming %s".format(e))
+    //   logger.info("Transforming %s".format(e))
     // }
 
     val TransformResult(transExprs, transGens) =
       Tseitin.transform(change.toList, prefix, lastGenInt + 1)
 
-    log("Created %d new expressions".format(transExprs.size))
+    logger.info("Created %d new expressions".format(transExprs.size))
 
     val result =
       BExprResult(in.ids,

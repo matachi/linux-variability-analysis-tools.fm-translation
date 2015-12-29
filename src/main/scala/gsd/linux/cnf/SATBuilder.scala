@@ -24,7 +24,7 @@ import org.sat4j.minisat.SolverFactory
 import org.sat4j.core.VecInt
 import collection.mutable.ListBuffer
 import gsd.linux.BExpr
-import util.logging.Logged
+import com.typesafe.scalalogging.LazyLogging
 import org.sat4j.specs.{IConstr, ISolver, ContradictionException}
 import gsd.linux.cnf.DimacsReader.DimacsHeader
 
@@ -90,14 +90,14 @@ class SATBuilder(cnf: CNF,
                  val genVars: Set[Int] = Set(),
                  // the last variable that should be considered normal
                  val cutoff: Int = -1)
-        extends SATSolver[ISolver] with Logged {
+        extends SATSolver[ISolver] with LazyLogging {
   
   val cutoffSize = if (cutoff > 0) cutoff else size
 
   def this(exprs: Iterable[BExpr], idMap: Map[String, Int], gens: Set[String]) =
     this(exprs flatMap { CNFBuilder.toCNF(_, idMap) }, idMap.size, gens map idMap.apply)
 
-  log("[DEBUG] %d generated variables".format(genVars.size))
+  logger.info("[DEBUG] %d generated variables".format(genVars.size))
 
   val genArray: Array[Boolean] = {
     val result = Array.fill[Boolean](size + 1)(false)
@@ -115,7 +115,7 @@ class SATBuilder(cnf: CNF,
   init
 
   private def init {
-    log("[DEBUG] SAT solver has %d variables".format(size))
+    logger.info("[DEBUG] SAT solver has %d variables".format(size))
     solver newVar size
 
     //FIXME workaround for free variables not appearing in models

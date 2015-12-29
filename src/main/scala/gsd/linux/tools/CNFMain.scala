@@ -1,6 +1,6 @@
 package gsd.linux.tools
 
-import util.logging.ConsoleLogger
+import com.typesafe.scalalogging.LazyLogging
 import Projects._
 import org.clapper.argot._
 import gsd.linux.BExprParser
@@ -8,7 +8,7 @@ import collection.immutable.PagedSeq
 import java.io.{InputStreamReader, PrintStream}
 import gsd.linux.BExprParser.BExprResult
 
-object CNFMain extends ArgotUtil with ConsoleLogger {
+object CNFMain extends ArgotUtil with LazyLogging {
 
   import gsd.linux.cnf._
   import ArgotConverters._
@@ -34,13 +34,13 @@ object CNFMain extends ArgotUtil with ConsoleLogger {
             parser.usage("Either a project (-p) is specified or input & output parameters are used.")
 
           case (None, Some(f)) =>
-            log("Reading boolean expressions from file...")
+            logger.info("Reading boolean expressions from file...")
             BExprParser.parseBExprResult(f)
 
           case (Some(p), None) => p.bool
 
           case (None, None) =>
-            log("Using stdin for input...")
+            logger.info("Using stdin for input...")
             BExprParser.parseBExprResult(new java.util.Scanner(System.in))
         }
 
@@ -59,10 +59,10 @@ object CNFMain extends ArgotUtil with ConsoleLogger {
   }
 
   def execute(in: BExprResult, verbose: Boolean, out: PrintStream) {
-    log("# of generated: " + in.generated.size)
+    logger.info("# of generated: " + in.generated.size)
 
     val cnf = in.expressions flatMap { e =>
-      if (verbose) log("Converting: " + e)
+      if (verbose) logger.info("Converting: " + e)
       e.toCNF(in.idMap)
     }
 

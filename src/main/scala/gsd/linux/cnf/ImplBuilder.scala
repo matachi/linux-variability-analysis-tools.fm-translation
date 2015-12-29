@@ -38,8 +38,8 @@ trait ImplBuilder extends SATBuilder with DoneArray {
           additional: Iterable[Int] = Nil)
       : DirectedGraph[T] = {
 
-    log("[DEBUG] Adding %d additional ignored variables".format(additional.size))
-    log("[DEBUG] %d remain in the resulting implication graph".format(cutoffSize - additional.size))
+    logger.info("[DEBUG] Adding %d additional ignored variables".format(additional.size))
+    logger.info("[DEBUG] %d remain in the resulting implication graph".format(cutoffSize - additional.size))
 
     val done = mkDoneArray(additional)
 

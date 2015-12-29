@@ -5,9 +5,9 @@ import gsd.linux.cnf._
 import collection.immutable.PagedSeq
 import java.io.{PrintStream, InputStreamReader}
 import gsd.linux.{BExpr, BExprParser}
-import util.logging.ConsoleLogger
+import com.typesafe.scalalogging.LazyLogging
 
-object ConstraintCheckerMain extends ConsoleLogger {
+object ConstraintCheckerMain extends LazyLogging {
 
   import ArgotConverters._
 
@@ -30,7 +30,7 @@ object ConstraintCheckerMain extends ConsoleLogger {
       val (header, problem) =
         (DimacsReader.readHeaderFile(cnfFile), DimacsReader.readFile(cnfFile))
 
-      log("Reading dimacs file...")
+      logger.info("Reading dimacs file...")
       val sat = new SATBuilder(problem.cnf, problem.numVars, header.generated)
 
       val exprs = checkParam.value match {
