@@ -7,7 +7,7 @@ organization := "ca.uwaterloo.gsd"
 scalaVersion := "2.11.7"
 
 libraryDependencies ++= Seq(
-    "org.clapper" %% "argot" % "1.0.3",
+    "org.clapper" %% "argot" % "1.0.4",
     "org.ow2.sat4j" % "org.ow2.sat4j.core" % "2.3.5",
     //"org.sat4j" % "org.sat4j.core" % "2.3.1",
     "com.novocode" % "junit-interface" % "0.11" % "test",
