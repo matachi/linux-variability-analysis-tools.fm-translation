@@ -163,11 +163,11 @@ class TristateTranslation(val k: AbstractKConfig, val addUndefined: Boolean = tr
 
       // Disallow (0,1) state
       val tristateConstraints: List[BExpr] =
-        AbstractKConfig.identifiers(c).toList map { id => BId(id) | !BId(id + "_m") }
+        AbstractKConfig.identifiers(List(c)).toList map { id => BId(id) | !BId(id + "_m") }
 
       // Make undefined variables dead referenced in this config
       val undefinedConstraints: List[BExpr] =
-        if (addUndefined) ((AbstractKConfig.identifiers(c) -- (k.configs map (_.name)) -- k.env) map (!BId(_))).toList
+        if (addUndefined) ((AbstractKConfig.identifiers(List(c)) -- (k.configs map (_.name)) -- k.env) map (!BId(_))).toList
         else Nil
       
       // an upper bound is only imposed on tristate configs, if it's parent is also tristate

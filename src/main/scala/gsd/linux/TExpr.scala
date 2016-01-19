@@ -3,7 +3,7 @@ package gsd.linux
 import com.typesafe.scalalogging.LazyLogging
 
 
-object TExpr extends LazyLogging with LazyLogging {
+object TExpr extends LazyLogging {
 
   /**
    * @param eqMap map from an eq / neq expression as a (name, expr) pair to an identifier.

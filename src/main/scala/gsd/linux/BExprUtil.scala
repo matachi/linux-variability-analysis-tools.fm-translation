@@ -26,7 +26,7 @@ object BExprUtil {
 
   val sFixExpr =
     innermost {
-      rule {
+      rule[BExpr] {
         case BOr(BTrue, y) => BTrue
         case BOr(x, BTrue) => BTrue
         case BOr(BFalse, y) => y
@@ -66,7 +66,7 @@ object BExprUtil {
 
   def sanitizeExpr(in: BExpr): BExpr = {
     val regex = """\W""".r
-    rewrite(everywheretd(rule {
+    rewrite(everywheretd(rule[BExpr] {
       case BId(v) if !regex.findFirstIn(v).isEmpty => BId(sanitizeString(v))
     }))(in)
   }

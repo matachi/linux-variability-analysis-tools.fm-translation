@@ -2,6 +2,7 @@ package gsd.linux.cnf
 
 import gsd.linux._
 import org.kiama.rewriting.Rewriter._
+import org.kiama.rewriting.Strategy
 import collection.mutable.HashMap
 
 object IdMap {
@@ -20,20 +21,20 @@ object IdMap {
 object CNFBuilder {
 
   val sDistributeRule: Strategy = oncetd {
-    rule {
+    rule[BExpr] {
       case BOr(BAnd(x,y),z) => BAnd(BOr(x,z), BOr(y,z))
       case BOr(x,BAnd(y,z)) => BAnd(BOr(x,y), BOr(x,z))
     }
   }
 
   val sIffRule = everywheretd {
-    rule {
+    rule[BExpr] {
       case BIff(x,y) => (!x | y) & (!y | x)
     }
   }
 
   val sImpliesRule = everywheretd {
-    rule {
+    rule[BExpr] {
       case BImplies(x,y) => !x | y
     }
   }

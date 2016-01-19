@@ -15,7 +15,8 @@ libraryDependencies ++= Seq(
     "org.scalatest" % "scalatest_2.11" % "2.2.4" % "test",
     //"org.scala-tools.testing" % "scalacheck_2.9.0-1" % "1.9" % "test"
     "org.scalacheck" % "scalacheck_2.11" % "1.11.6",
-    "com.typesafe.scala-logging" % "scala-logging_2.11" % "3.1.0"
+    "com.typesafe.scala-logging" % "scala-logging_2.11" % "3.1.0",
+    "com.googlecode.kiama" % "kiama_2.11" % "1.8.0"
 )
 
 resolvers += "Local Maven Repository" at Path.userHome.asURL + "/.m2/repository"
